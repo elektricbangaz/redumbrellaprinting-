@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  ADMIN
+  STAFF
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         AdminRole @default(STAFF)
+  createdAt    DateTime  @default(now())
+  broadcasts   Broadcast[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  category    String
+  description String?
+  basePrice   Int // stored in cents (JMD minor unit)
+  colors      Json      // string[]
+  sizes       Json      // string[]
+  images      Json      // string[]
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  designs    Design[]
+  orderItems OrderItem[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  orders  Order[]
+  designs Design[]
+}
+
+model Design {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  color        String
+  canvasData   Json // { front: Layer[], back: Layer[] }
+  previewImage String?
+  createdAt    DateTime @default(now())
+
+  orderItems OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  IN_PRODUCTION
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  WIPAY
+  FYGARO
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  orderNumber     String          @unique
+  customerId      String?
+  customer        Customer?       @relation(fields: [customerId], references: [id])
+  customerEmail   String
+  customerName    String
+  customerPhone   String?
+  shippingAddress String?
+  notes           String?
+  status          OrderStatus     @default(PENDING_PAYMENT)
+  paymentProvider PaymentProvider?
+  paymentStatus   PaymentStatus   @default(UNPAID)
+  paymentReference String?
+  subtotal        Int
+  total           Int
+  currency        String          @default("JMD")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  items      OrderItem[]
+  workOrders WorkOrder[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  designId   String?
+  design     Design?  @relation(fields: [designId], references: [id])
+  size       String
+  color      String
+  quantity   Int
+  unitPrice  Int
+  lineTotal  Int
+}
+
+enum WorkOrderStage {
+  QUEUED
+  IN_PROGRESS
+  QUALITY_CHECK
+  COMPLETED
+}
+
+model WorkOrder {
+  id              String         @id @default(cuid())
+  workOrderNumber String         @unique
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage           WorkOrderStage @default(QUEUED)
+  assignedTo      String?
+  dueDate         DateTime?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  poNumber    String              @unique
+  vendorName  String
+  vendorEmail String?
+  status      PurchaseOrderStatus @default(DRAFT)
+  notes       String?
+  total       Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  items PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  description     String
+  quantity        Int
+  unitCost        Int
+  lineTotal       Int
+}
+
+model Subscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+}
+
+model Broadcast {
+  id          String    @id @default(cuid())
+  subject     String
+  body        String
+  sentAt      DateTime?
+  sentCount   Int       @default(0)
+  createdById String?
+  createdBy   AdminUser? @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+}
