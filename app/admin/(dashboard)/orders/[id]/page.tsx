@@ -4,6 +4,8 @@ import { formatJMD } from "@/lib/money";
 import { PaymentStatusBadge } from "@/components/admin/badges";
 import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOrderDetailPage({
   params,
 }: {

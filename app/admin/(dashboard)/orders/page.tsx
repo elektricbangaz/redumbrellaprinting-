@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { formatJMD } from "@/lib/money";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/badges";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },

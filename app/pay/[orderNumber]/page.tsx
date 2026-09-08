@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { formatJMD } from "@/lib/money";
 import { PayStubActions } from "./PayStubActions";
 
+export const dynamic = "force-dynamic";
+
 export default async function PayStubPage({
   params,
   searchParams,

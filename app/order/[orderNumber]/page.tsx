@@ -4,6 +4,8 @@ import { formatJMD } from "@/lib/money";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrderConfirmationPage({
   params,
 }: {

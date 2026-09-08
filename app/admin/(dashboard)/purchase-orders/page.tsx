@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { formatJMD } from "@/lib/money";
 import { PurchaseOrderStatusSelect } from "@/components/admin/PurchaseOrderStatusSelect";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPurchaseOrdersPage() {
   const pos = await prisma.purchaseOrder.findMany({ orderBy: { createdAt: "desc" } });
 

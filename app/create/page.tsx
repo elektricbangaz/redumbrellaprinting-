@@ -3,6 +3,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DesignerApp } from "./DesignerApp";
 
+export const dynamic = "force-dynamic";
+
 export default async function CreatePage({
   searchParams,
 }: {

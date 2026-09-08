@@ -9,6 +9,8 @@ const STAGES: { key: string; label: string }[] = [
   { key: "COMPLETED", label: "Completed" },
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminWorkOrdersPage() {
   const workOrders = await prisma.workOrder.findMany({
     include: { order: { include: { items: { include: { product: true } } } } },

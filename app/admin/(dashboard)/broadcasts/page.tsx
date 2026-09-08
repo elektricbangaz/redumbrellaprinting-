@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { BroadcastComposer } from "./BroadcastComposer";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminBroadcastsPage() {
   const [subscriberCount, broadcasts] = await Promise.all([
     prisma.subscriber.count({ where: { unsubscribedAt: null } }),
