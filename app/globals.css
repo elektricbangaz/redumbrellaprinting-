@@ -149,3 +149,131 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 .services-approved{padding:18px 4.5vw 34px}
 .services-approved-image{display:block;width:100%;max-width:1440px;height:auto;margin:0 auto}
 @media(max-width:820px){.services-approved{padding-inline:20px;overflow-x:auto}.services-approved-image{min-width:900px}}
+
+
+/* ==========================================================================
+   RED UMBRELLA — APPROVED PUBLIC MOCKUP LOCK
+   Source of truth: approved 2026-09-10 landing-page mockup.
+   Do not replace raster product/service mockups with SVG placeholders.
+   ========================================================================== */
+.rup-site{--rup-max:944px;--rup-red:#c91418;--rup-dark:#11171b;--rup-cream:#fbf8f6;background:#fff;color:#111}
+.rup-site .site-header{height:80px;padding:0;background:#fff;border-bottom:1px solid #eee;position:relative;top:auto}
+.rup-site .header-inner{width:min(var(--rup-max),calc(100% - 48px));height:100%;margin:auto;display:flex;align-items:center;gap:25px;position:relative}
+.rup-site .brand{width:74px;flex:0 0 74px}
+.rup-site .brand img{width:74px;height:74px;object-fit:contain}
+.rup-site .desktop-nav{gap:27px;font-size:12px;font-weight:600}
+.rup-site .desktop-nav a{white-space:nowrap}
+.rup-site .header-actions{gap:17px}
+.rup-site .cart-button{padding:7px}
+.rup-site .cart-button span{width:17px;height:17px;font-size:9px;right:-1px;top:-2px}
+.rup-site .header-cta{min-width:132px;min-height:40px;text-transform:none;font-size:12px;border-radius:5px}
+.rup-site .button{min-height:43px;padding:0 20px;border-radius:5px;font-size:12px;text-transform:none}
+.rup-site .hero{min-height:0;padding:0;background:linear-gradient(90deg,#fff 0%,#fff 45%,#fbf9f7 100%);display:block}
+.rup-site .hero-inner{width:min(var(--rup-max),calc(100% - 48px));height:488px;margin:auto;display:grid;grid-template-columns:41% 34% 25%;align-items:center;position:relative}
+.rup-site .hero-copy{max-width:none;align-self:center;padding:7px 0 0}
+.rup-site .hero h1{font-family:"Arial Narrow",Impact,Haettenschweiler,sans-serif;font-size:52px;line-height:.94;letter-spacing:-1.8px;margin:0 0 18px;font-weight:900}
+.rup-site .hero h1 span{color:var(--rup-red)}
+.rup-site .hero-copy>p{font-size:14px;line-height:1.5;max-width:360px;margin:0 0 20px;color:#303030}
+.rup-site .hero-buttons{gap:12px}
+.rup-site .hero-buttons .button{min-width:166px}
+.rup-site .hero-proof{gap:22px;margin-top:24px;font-size:10px}
+.rup-site .hero-proof svg{width:18px;height:18px;color:var(--rup-red)}
+.rup-site .trophy-mark{font-size:17px;color:var(--rup-red)}
+.rup-site .hero-product{height:100%;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.rup-site .hero-shirt-photo{width:315px;height:auto;max-height:450px;object-fit:contain;filter:drop-shadow(0 18px 16px rgba(0,0,0,.11));transform:translateX(4px)}
+.rup-site .designer-card{position:relative;right:auto;top:auto;width:100%;max-width:245px;justify-self:end;background:#fff;border:1px solid #eee;border-radius:10px;padding:16px;box-shadow:0 14px 34px rgba(0,0,0,.08);z-index:2}
+.rup-site .designer-title{display:flex;gap:9px;align-items:center}
+.rup-site .designer-title h3{font-size:13px;margin:0 0 10px}
+.rup-site .shirt-symbol{font-size:20px}
+.rup-site .designer-photo-wrap{height:185px;background:#fafafa;border-radius:5px;display:grid;place-items:center;position:relative;overflow:hidden}
+.rup-site .designer-photo-wrap img{width:100%;height:100%;object-fit:contain}
+.rup-site .designer-arrow{position:absolute;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:22px;padding:4px}
+.rup-site .designer-arrow.left{left:1px}.rup-site .designer-arrow.right{right:1px}
+.rup-site .designer-tools{grid-template-columns:repeat(4,1fr);padding:12px 0;border-bottom:1px solid #e5e5e5}
+.rup-site .designer-tools button{font-size:8px;gap:3px}
+.rup-site .designer-tools svg{width:16px}.rup-site .side-icon{font-size:16px}
+.rup-site .price-row{padding:14px 0 11px}
+.rup-site .price-row small{font-size:11px}.rup-site .price-row strong{font-size:17px}
+.rup-site .card-button{min-height:40px}
+.rup-site .how-section{padding:14px 0 20px;background:#fff}
+.rup-site .how-card{width:min(var(--rup-max),calc(100% - 48px));margin:auto;background:var(--rup-cream);border-radius:10px;padding:22px 32px 26px}
+.rup-site .section-heading{margin-bottom:18px}
+.rup-site .section-heading h2{font-size:20px;margin:0 0 5px}
+.rup-site .section-heading p{font-size:11px}
+.rup-site .steps{background:transparent;border-radius:0;padding:0;gap:24px;max-width:none}
+.rup-site .step:not(:last-child)::after{top:29px;left:70%;width:60%;border-color:#b8b8b8}
+.rup-site .step-icon{width:56px;height:56px;margin-bottom:12px;border-color:#f0d1d1;color:var(--rup-red);font-size:18px}
+.rup-site .step-icon svg{width:24px}
+.rup-site .step-icon b{left:-7px;top:-2px;width:19px;height:19px;font-size:9px}
+.rup-site .calculator{font-size:10px;padding:5px 4px}
+.rup-site .step h3{font-size:11px;margin-bottom:7px}
+.rup-site .step p{font-size:10px;line-height:1.45;max-width:160px}
+.rup-site .services{padding:12px 0 22px}
+.rup-site .services .section-heading{margin-bottom:17px}
+.rup-site .category-grid{width:min(var(--rup-max),calc(100% - 48px));grid-template-columns:repeat(5,1fr);gap:12px}
+.rup-site .category-card{border:1px solid #dedede;border-radius:7px;overflow:hidden;background:#fff}
+.rup-site .category-image{height:132px;background:#f2f1ef}
+.rup-site .category-image img{width:100%;height:100%;object-fit:cover}
+.rup-site .category-copy{padding:11px 12px 14px;min-height:76px}
+.rup-site .category-copy h3{font-size:10.5px;margin:0 28px 5px 0}
+.rup-site .category-copy p{font-size:9px;line-height:1.35;margin-right:25px}
+.rup-site .category-copy button{width:23px;height:23px;right:10px;bottom:11px}
+.rup-site .category-copy button svg{width:14px}
+.rup-site .quote-section{padding:0 0 18px}
+.rup-site .quote-strip{width:min(var(--rup-max),calc(100% - 48px));margin:auto;padding:21px 23px;border-radius:8px;background:var(--rup-cream);grid-template-columns:1.25fr repeat(3,.8fr);gap:20px}
+.rup-site .quote-lead h2{font-size:14px;margin:0 0 6px;color:var(--rup-red)}
+.rup-site .quote-lead p{font-size:10px!important;line-height:1.4;margin:0 0 12px!important;max-width:230px}
+.rup-site .quote-lead .button{min-height:35px;padding:0 14px;font-size:9px}
+.rup-site .quote-benefit{padding-left:18px;gap:10px}
+.rup-site .quote-benefit>svg{width:28px;height:28px;flex:0 0 28px;color:var(--rup-red)}
+.rup-site .quote-benefit p{font-size:9px!important;line-height:1.35}
+.rup-site .quote-benefit strong{font-size:10px}
+.rup-site footer{margin-top:0;padding:24px 0 13px;background:#10171b}
+.rup-site .footer-grid{width:min(var(--rup-max),calc(100% - 48px));grid-template-columns:1.55fr .85fr .8fr .8fr .9fr 1.35fr;gap:22px}
+.rup-site .footer-brand{gap:12px}
+.rup-site .footer-brand>img{width:70px;height:70px;flex:0 0 70px}
+.rup-site footer h3,.rup-site footer h4{font-size:9.5px;margin-bottom:9px}
+.rup-site footer p,.rup-site footer a{font-size:8.5px;line-height:1.45;margin-bottom:5px}
+.rup-site .social-row{display:flex;gap:12px;margin-top:12px;font-size:15px}
+.rup-site .newsletter>div{margin:9px 0}.rup-site .newsletter input{padding:8px;font-size:8.5px}.rup-site .newsletter button{font-size:8px;padding:0 11px}
+.rup-site .payments{font-size:10px!important;margin-top:9px!important}
+.rup-site .copyright{width:min(var(--rup-max),calc(100% - 48px));margin:18px auto 0;padding-top:0;border-top:0;font-size:8px}
+
+@media(max-width:980px){
+  .rup-site .desktop-nav{gap:15px;font-size:10px}
+  .rup-site .header-inner{width:calc(100% - 30px)}
+  .rup-site .hero-inner{width:calc(100% - 30px);grid-template-columns:40% 34% 26%}
+  .rup-site .hero h1{font-size:45px}
+  .rup-site .designer-card{max-width:225px}
+  .rup-site .category-grid,.rup-site .how-card,.rup-site .quote-strip,.rup-site .footer-grid{width:calc(100% - 30px)}
+}
+@media(max-width:820px){
+  .rup-site .site-header{height:76px}
+  .rup-site .header-inner{width:calc(100% - 36px)}
+  .rup-site .desktop-nav,.rup-site .header-cta{display:none}
+  .rup-site .header-actions{margin-left:auto}
+  .rup-site .mobile-toggle{display:block}
+  .rup-site .mobile-nav{top:76px}
+  .rup-site .hero-inner{height:auto;min-height:690px;width:calc(100% - 36px);grid-template-columns:1fr;grid-template-rows:auto 330px auto;padding:34px 0 28px}
+  .rup-site .hero-copy{padding:0}
+  .rup-site .hero-copy>p{max-width:520px}
+  .rup-site .hero-product{grid-row:2}
+  .rup-site .hero-shirt-photo{height:320px;width:auto}
+  .rup-site .designer-card{grid-row:3;justify-self:center;max-width:360px;width:100%}
+  .rup-site .category-grid{grid-template-columns:repeat(2,1fr)}
+  .rup-site .category-image{height:190px}
+  .rup-site .quote-strip{grid-template-columns:1fr 1fr}
+  .rup-site .footer-grid{grid-template-columns:1.5fr 1fr 1fr}
+}
+@media(max-width:560px){
+  .rup-site .brand,.rup-site .brand img{width:64px;height:64px;flex-basis:64px}
+  .rup-site .hero h1{font-size:43px}
+  .rup-site .hero-buttons{display:grid;grid-template-columns:1fr}
+  .rup-site .hero-buttons .button{width:100%}
+  .rup-site .hero-proof{gap:12px}
+  .rup-site .how-card,.rup-site .category-grid,.rup-site .quote-strip,.rup-site .footer-grid{width:calc(100% - 28px)}
+  .rup-site .steps,.rup-site .category-grid,.rup-site .quote-strip,.rup-site .footer-grid{grid-template-columns:1fr}
+  .rup-site .step:not(:last-child)::after{display:none}
+  .rup-site .category-image{height:240px}
+  .rup-site .quote-benefit{border-left:0;border-top:1px solid #ddd;padding:14px 0 0}
+}
