@@ -144,3 +144,8 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 .summary-row.total{font-weight:800;font-size:16px;border-top:1px solid var(--line);padding-top:12px}
 .summary-row.total span:last-child{color:var(--red)}
 @media(max-width:1000px){.designer-page{grid-template-columns:1fr}}
+
+/* Approved mockup lock — service section must render as one composed asset, never sliced */
+.services-approved{padding:18px 4.5vw 34px}
+.services-approved-image{display:block;width:100%;max-width:1440px;height:auto;margin:0 auto}
+@media(max-width:820px){.services-approved{padding-inline:20px;overflow-x:auto}.services-approved-image{min-width:900px}}
