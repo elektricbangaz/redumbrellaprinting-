@@ -2,8 +2,14 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { authConfig } from "./auth.config";
 
+// Full NextAuth config (Credentials provider + DB access). This runs in the
+// Node runtime only (Server Components, Route Handlers) — never import this
+// from middleware.ts, or bcrypt/Prisma get bundled into the Edge Function
+// and blow past Vercel's Edge Function size limit.
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -30,35 +36,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  pages: {
-    signIn: "/admin/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
-  callbacks: {
-    authorized({ request, auth }) {
-      const isLoggedIn = !!auth?.user;
-      const isLoginPage = request.nextUrl.pathname.startsWith("/admin/login");
-      if (isLoginPage) return true;
-      return isLoggedIn;
-    },
-    jwt({ token, user }) {
-      if (user) {
-        token.role = (user as { role?: string }).role;
-        token.sub = user.id;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        const user = session.user as typeof session.user & {
-          role?: string;
-        };
-        user.role = token.role as string | undefined;
-        if (token.sub) user.id = token.sub;
-      }
-      return session;
-    },
-  },
 });
