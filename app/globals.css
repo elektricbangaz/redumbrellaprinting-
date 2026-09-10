@@ -277,3 +277,17 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-site .category-image{height:240px}
   .rup-site .quote-benefit{border-left:0;border-top:1px solid #ddd;padding:14px 0 0}
 }
+
+
+/* Phase 0 professional polish */
+html,body{font-family:var(--font-ui),Arial,Helvetica,sans-serif}
+.rup-site,.create-page,.admin-shell{font-family:var(--font-ui),Arial,Helvetica,sans-serif}
+.rup-site .hero h1,.create-intro h1{font-family:var(--font-display),Impact,sans-serif;font-weight:700;letter-spacing:-.035em}
+.rup-site .designer-title>svg{width:19px;height:19px;stroke-width:1.8}
+.rup-site .social-row a{display:grid;place-items:center;color:#fff;margin:0}
+.rup-site .social-row a:hover{color:var(--red)}
+.rup-site .social-row svg{width:15px;height:15px;stroke-width:1.8}
+.rup-site .button,.rup-site button,.rup-site input,.rup-site select{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+.rup-site .button:focus-visible,.rup-site button:focus-visible,.rup-site input:focus-visible,.rup-site select:focus-visible{outline:3px solid rgba(201,20,24,.18);outline-offset:2px}
+.rup-site .category-card{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.rup-site .category-card:hover{transform:translateY(-2px);border-color:#d5d0cc;box-shadow:0 12px 28px rgba(17,23,27,.08)}
