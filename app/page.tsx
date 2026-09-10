@@ -2,13 +2,6 @@
 import {ChevronDown,ChevronRight,Clock3,Headphones,Menu,Palette,RotateCw,ShieldCheck,ShoppingCart,Type,Upload,X} from "lucide-react";
 import {useState} from "react";
 
-const categories=[
-{title:"APPAREL",sub:"T-Shirts, Hoodies, Caps & More",spritePos:"0%"},
-{title:"PROMOTIONAL ITEMS",sub:"Bottles, Bags, Gifts & More",spritePos:"25%"},
-{title:"SIGNS & DISPLAYS",sub:"Acrylic, LED, Foam Board & More",spritePos:"50%"},
-{title:"VEHICLE GRAPHICS",sub:"Wraps, Decals, Fleets & More",spritePos:"75%"},
-{title:"BANNERS & PRINTS",sub:"Vinyl, Mesh, Posters & More",spritePos:"100%"}];
-
 const steps=[
 ["CHOOSE & DESIGN","Pick your product and design online or upload your artwork."],
 ["REVIEW & PRICE","Review your design, select options and see your price instantly."],
@@ -48,9 +41,9 @@ return <main>
 {steps.map((s,i)=><div className="step" key={s[0]}><div className="step-icon">{i===0&&<Palette/>}{i===1&&<span className="calculator">123</span>}{i===2&&<span className="card-icon">▭</span>}{i===3&&<span className="box-icon">□</span>}<b>{i+1}</b></div><h3>{s[0]}</h3><p>{s[1]}</p></div>)}
 </div></section>
 
-<section className="services" id="services"><div className="section-heading"><h2>WHAT CAN WE PRINT FOR YOU?</h2></div><div className="category-grid">
-{categories.map(c=><article className="category-card" key={c.title}><div className="category-image category-photo" role="img" aria-label={c.title} style={{backgroundPositionX:c.spritePos}}/><div className="category-copy"><h3>{c.title}</h3><p>{c.sub}</p><button><ChevronRight/></button></div></article>)}
-</div></section>
+<section className="services services-approved" id="services">
+  <img className="services-approved-image" src="/mockups/categories-sprite.webp" alt="What can we print for you — apparel, promotional items, signs and displays, vehicle graphics, banners and prints"/>
+</section>
 
 <section className="quote-strip" id="quote"><div><h2>NEED SOMETHING UNIQUE?</h2><p>From custom signage to large format projects, our team is here to bring your vision to life.</p><a className="button button-outline-red" href="#contact">GET A CUSTOM QUOTE</a></div><div className="quote-benefit"><span>◎</span><p><strong>Expert Production</strong><br/>Advanced equipment and skilled craftsmanship.</p></div><div className="quote-benefit"><span>◉</span><p><strong>Fast Turnaround</strong><br/>Reliable production and on-time delivery.</p></div><div className="quote-benefit"><span>🇯🇲</span><p><strong>Made in Jamaica</strong><br/>Proudly producing locally for you.</p></div></section>
 
