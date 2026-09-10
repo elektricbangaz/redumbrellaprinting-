@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import {
-  ChevronDown, ChevronRight, Clock3, CreditCard, Headphones, MapPin, Menu,
-  PackageCheck, Palette, PenLine, Settings2, ShieldCheck, ShoppingCart, Type,
-  Upload, X
+  Award, ChevronDown, ChevronRight, Clock3, CreditCard, Facebook, Instagram, MapPin, Menu,
+  MessageCircle, Music2, PackageCheck, Palette, PenLine, Settings2, ShieldCheck, Shirt,
+  ShoppingCart, Type, Upload, X
 } from "lucide-react";
 import { useState } from "react";
 
@@ -73,7 +73,7 @@ export default function Home() {
             <div className="hero-proof">
               <span><ShieldCheck />Secure Payments</span>
               <span><Clock3 />Fast Turnaround</span>
-              <span><span className="trophy-mark">♜</span>Premium Quality</span>
+              <span><Award />Premium Quality</span>
             </div>
           </div>
 
@@ -89,7 +89,7 @@ export default function Home() {
           </div>
 
           <aside className="designer-card">
-            <div className="designer-title"><span className="shirt-symbol">♙</span><h3>Design Your Apparel</h3></div>
+            <div className="designer-title"><Shirt /><h3>Design Your Apparel</h3></div>
             <div className="designer-photo-wrap">
               <Image src="/mockups/designer-good-vibes.webp" alt="Good Vibes black T-shirt" width={205} height={190} />
               <button className="designer-arrow left" aria-label="Previous product">‹</button>
@@ -99,7 +99,7 @@ export default function Home() {
               <button><Type /><span>Add Text</span></button>
               <button><Upload /><span>Upload</span></button>
               <button><Palette /><span>Colors</span></button>
-              <button><span className="side-icon">▱</span><span>Front/Back</span></button>
+              <button><Shirt /><span>Front/Back</span></button>
             </div>
             <div className="price-row"><small>Starting at</small><strong>JMD $1,800</strong></div>
             <a className="button button-red card-button" href="/create">Start Designing <ChevronRight size={18} /></a>
@@ -166,7 +166,7 @@ export default function Home() {
             <div>
               <h3>RED UMBRELLA PRINTING</h3>
               <p>Full service print factory specializing in apparel, signage, vehicle graphics, promotional items and large format printing.</p>
-              <div className="social-row"><span>◎</span><span>●</span><span>♪</span><span>◉</span></div>
+              <div className="social-row"><a href="#" aria-label="Instagram"><Instagram /></a><a href="#" aria-label="Facebook"><Facebook /></a><a href="#" aria-label="TikTok"><Music2 /></a><a href="#" aria-label="WhatsApp"><MessageCircle /></a></div>
             </div>
           </div>
           <div><h4>SHOP</h4><a href="#services">All Products</a><a href="#services">Apparel</a><a href="#services">Promotional Items</a><a href="#services">Signs & Displays</a><a href="#services">Vehicle Graphics</a><a href="#services">Banners & Prints</a></div>
