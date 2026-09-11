@@ -13,7 +13,11 @@ export async function POST(req:Request){
  const body=await req.json().catch(()=>null); const parsed=schema.safeParse(body);
  if(!parsed.success) return NextResponse.json({error:"Please complete the required fields."},{status:400});
  const q=parsed.data; const reference=`RUP-Q-${Date.now().toString().slice(-8)}`;
- await prisma.customer.upsert({where:{email:q.email},update:{name:q.name,phone:q.phone},create:{email:q.email,name:q.name,phone:q.phone}});
+ try {
+   await prisma.customer.upsert({where:{email:q.email},update:{name:q.name,phone:q.phone},create:{email:q.email,name:q.name,phone:q.phone}});
+ } catch (error) {
+   console.error("Quote customer capture deferred:", error);
+ }
  const resend=getResendClient();
  if(resend){
    const lines=[["Reference",reference],["Name",q.name],["Email",q.email],["Phone",q.phone],["Company",q.company],["Job type",q.jobType],["Quantity",q.quantity],["Dimensions",q.dimensions],["Needed by",q.dueDate],["Budget",q.budget],["Artwork",q.artworkUrl],["Details",q.details]];
