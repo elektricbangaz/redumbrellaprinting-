@@ -6,8 +6,8 @@ const categories=[
   {title:"Apparel",copy:"T-shirts, hoodies, caps & uniforms",href:"/products?category=Apparel",image:"/mockups/category-apparel.webp",kind:"image"},
   {title:"Promotional Items",copy:"Bottles, bags, gifts & event merchandise",href:"/products?category=Promotional",image:"/mockups/category-promotional.webp",kind:"image"},
   {title:"Signs & Displays",copy:"Acrylic, LED, routed signs & display systems",href:"/products?category=Signs",image:"/mockups/category-signage.webp",kind:"image"},
-  {title:"Vehicle Graphics",copy:"Fleet wraps, decals and vehicle branding",href:"/products?category=Vehicle",kind:"vehicle"},
-  {title:"Banners & Prints",copy:"Vinyl, mesh, posters and large-format print",href:"/products?category=Banners",kind:"banner"},
+  {title:"Vehicle Graphics",copy:"Fleet wraps, decals and vehicle branding",href:"/products?category=Vehicle",image:"/mockups/category-vehicle.webp",kind:"image"},
+  {title:"Banners & Prints",copy:"Vinyl, mesh, posters and large-format print",href:"/products?category=Banners",image:"/mockups/category-banners.webp",kind:"image"},
 ];
 
 export default function Home(){
