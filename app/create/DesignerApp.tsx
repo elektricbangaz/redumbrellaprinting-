@@ -16,14 +16,8 @@ import {
   Type,
   Upload,
 } from "lucide-react";
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-} from "framer-motion";
 import { useCart } from "@/lib/cart-context";
+import { ThreeShirtViewer } from "./ThreeShirtViewer";
 import { formatJMD } from "@/lib/money";
 import {
   DesignLayer,
@@ -60,15 +54,6 @@ export function DesignerApp({
 }) {
   const cart = useCart();
   const printAreaRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-
-  const tiltX = useMotionValue(0);
-  const tiltY = useMotionValue(0);
-  const springX = useSpring(tiltX, { stiffness: 160, damping: 18 });
-  const springY = useSpring(tiltY, { stiffness: 160, damping: 18 });
-  const rotateX = useTransform(springY, [-1, 1], [5, -5]);
-  const rotateY = useTransform(springX, [-1, 1], [-7, 7]);
-
   const [productId, setProductId] = useState(initialProductId);
   const product = products.find((p) => p.id === productId) || products[0];
 
@@ -85,6 +70,8 @@ export function DesignerApp({
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
+  const isApparel3D = ["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug);
+  const smartTextColor = contrastTextColor(color);
 
   function updateLayers(updater: (layers: DesignLayer[]) => DesignLayer[]) {
     setDesign((prev) => ({ ...prev, [side]: updater(prev[side]) }));
@@ -93,8 +80,13 @@ export function DesignerApp({
   function selectProduct(id: string) {
     const next = products.find((p) => p.id === id)!;
     setProductId(id);
-    setColor(next.colors[0]);
+    const nextColor = next.colors[0];
+    setColor(nextColor);
     setSize(next.sizes[0]);
+    setDesign((prev) => ({
+      front: prev.front.map((l) => l.type === "text" ? { ...l, color: contrastTextColor(nextColor) } : l),
+      back: prev.back.map((l) => l.type === "text" ? { ...l, color: contrastTextColor(nextColor) } : l),
+    }));
     setImageIndex(0);
     setSelectedId(null);
   }
@@ -112,7 +104,7 @@ export function DesignerApp({
       bold: false,
       italic: false,
       align: "center",
-      color: "#111111",
+      color: smartTextColor,
       fontSize: 28,
     };
     updateLayers((ls) => [...ls, layer]);
@@ -136,6 +128,15 @@ export function DesignerApp({
         l.id === selected.id && l.type === "image" ? { ...l, ...patch } : l
       )
     );
+  }
+
+  function selectColor(nextColor: string) {
+    setColor(nextColor);
+    const nextText = contrastTextColor(nextColor);
+    setDesign((prev) => ({
+      front: prev.front.map((l) => l.type === "text" ? { ...l, color: nextText } : l),
+      back: prev.back.map((l) => l.type === "text" ? { ...l, color: nextText } : l),
+    }));
   }
 
   function handleUpload(file: File) {
@@ -227,18 +228,6 @@ export function DesignerApp({
     window.addEventListener("pointerup", onUp);
   }
 
-  function handleTilt(e: React.PointerEvent<HTMLDivElement>) {
-    if (reduceMotion) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    tiltX.set(((e.clientX - rect.left) / rect.width - 0.5) * 2);
-    tiltY.set(((e.clientY - rect.top) / rect.height - 0.5) * 2);
-  }
-
-  function resetTilt() {
-    tiltX.set(0);
-    tiltY.set(0);
-  }
-
   const hasDesign = design.front.length > 0 || design.back.length > 0;
   const price = product.basePrice * quantity;
   const quoteOnly = Boolean(product.quoteOnly || product.basePrice <= 0);
@@ -319,10 +308,14 @@ export function DesignerApp({
                 className={`color-swatch ${color === c ? "selected" : ""}`}
                 style={{ background: swatchColor(c) }}
                 title={c}
-                onClick={() => setColor(c)}
+                onClick={() => selectColor(c)}
                 aria-label={`Select ${c}`}
               />
             ))}
+          </div>
+          <div className="smart-color-note">
+            <span className="smart-color-chip" style={{ background: smartTextColor }} />
+            Smart text colour: <strong>{smartTextColor.toUpperCase()}</strong>
           </div>
         </div>
 
@@ -408,6 +401,31 @@ export function DesignerApp({
             </label>
           )}
 
+          {selected && (
+            <div className="designer-position-grid">
+              <label className="designer-range">
+                <span>Left / right</span>
+                <input
+                  type="range"
+                  min="5"
+                  max="95"
+                  value={selected.x}
+                  onChange={(e) => updateLayers((ls) => ls.map((l) => l.id === selected.id ? { ...l, x: Number(e.target.value) } : l))}
+                />
+              </label>
+              <label className="designer-range">
+                <span>Up / down</span>
+                <input
+                  type="range"
+                  min="5"
+                  max="95"
+                  value={selected.y}
+                  onChange={(e) => updateLayers((ls) => ls.map((l) => l.id === selected.id ? { ...l, y: Number(e.target.value) } : l))}
+                />
+              </label>
+            </div>
+          )}
+
           <div className="text-toolbar">
             <button
               type="button"
@@ -479,67 +497,64 @@ export function DesignerApp({
               Back
             </button>
           </div>
-          <span className="designer-3d-hint">Move your pointer to inspect in 3D</span>
+          <span className="designer-3d-hint">Drag to rotate • Scroll to zoom</span>
         </div>
 
-        <div
-          className="designer-canvas"
-          onPointerMove={handleTilt}
-          onPointerLeave={resetTilt}
-          onPointerDown={() => setSelectedId(null)}
-        >
-          <motion.div
-            className={`garment-stage garment-${product.slug}`}
-            style={{
-              rotateX: reduceMotion ? 0 : rotateX,
-              rotateY: reduceMotion ? 0 : rotateY,
-              transformPerspective: 1100,
-            }}
-          >
-            <img
-              className="mockup"
-              src={product.images[imageIndex] || product.images[0]}
-              alt={product.name}
+        <div className={`designer-canvas ${isApparel3D ? "designer-canvas-true3d" : ""}`} onPointerDown={() => setSelectedId(null)}>
+          {isApparel3D ? (
+            <ThreeShirtViewer
+              productSlug={product.slug}
+              colorName={color}
+              side={side}
+              design={design}
+              className="three-shirt-viewer"
             />
-
-            <div
-              className={`print-area print-area-${product.slug} print-side-${side}`}
-              ref={printAreaRef}
-            >
-              <div className="fabric-light" aria-hidden="true" />
-              {layers.map((layer) => (
-                <div
-                  key={layer.id}
-                  className={`design-layer ${selectedId === layer.id ? "selected" : ""}`}
-                  style={{
-                    left: `${layer.x}%`,
-                    top: `${layer.y}%`,
-                    transform: `translate(-50%, -50%) rotate(${layer.rotation}deg)`,
-                    width: layer.type === "image" ? `${layer.widthPct}%` : "auto",
-                  }}
-                  onPointerDown={(e) => startDrag(e, layer.id)}
-                >
-                  {layer.type === "text" ? (
-                    <span
-                      className="design-layer-text"
-                      style={{
-                        fontFamily: layer.fontFamily,
-                        fontWeight: layer.bold ? 800 : 500,
-                        fontStyle: layer.italic ? "italic" : "normal",
-                        textAlign: layer.align,
-                        color: layer.color,
-                        fontSize: layer.fontSize,
-                      }}
-                    >
-                      {layer.content}
-                    </span>
-                  ) : (
-                    <img src={layer.src} alt="Uploaded artwork" />
-                  )}
-                </div>
-              ))}
+          ) : (
+            <div className={`garment-stage garment-${product.slug}`}>
+              <img
+                className="mockup"
+                src={product.images[imageIndex] || product.images[0]}
+                alt={product.name}
+              />
+              <div
+                className={`print-area print-area-${product.slug} print-side-${side}`}
+                ref={printAreaRef}
+              >
+                <div className="fabric-light" aria-hidden="true" />
+                {layers.map((layer) => (
+                  <div
+                    key={layer.id}
+                    className={`design-layer ${selectedId === layer.id ? "selected" : ""}`}
+                    style={{
+                      left: `${layer.x}%`,
+                      top: `${layer.y}%`,
+                      transform: `translate(-50%, -50%) rotate(${layer.rotation}deg)`,
+                      width: layer.type === "image" ? `${layer.widthPct}%` : "auto",
+                    }}
+                    onPointerDown={(e) => startDrag(e, layer.id)}
+                  >
+                    {layer.type === "text" ? (
+                      <span
+                        className="design-layer-text"
+                        style={{
+                          fontFamily: layer.fontFamily,
+                          fontWeight: layer.bold ? 800 : 500,
+                          fontStyle: layer.italic ? "italic" : "normal",
+                          textAlign: layer.align,
+                          color: layer.color,
+                          fontSize: layer.fontSize,
+                        }}
+                      >
+                        {layer.content}
+                      </span>
+                    ) : (
+                      <img src={layer.src} alt="Uploaded artwork" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </motion.div>
+          )}
         </div>
 
         <div className="admin-toolbar designer-actions">
@@ -626,6 +641,20 @@ export function DesignerApp({
       </div>
     </div>
   );
+}
+
+function contrastTextColor(name: string): string {
+  const hex = swatchColor(name);
+  if (!hex.startsWith("#")) return "#ffffff";
+  const clean = hex.slice(1);
+  const normalized = clean.length === 3 ? clean.split("").map((x) => x + x).join("") : clean;
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  if (name === "Red") return "#ffd84a";
+  if (name === "Navy" || name === "Black") return "#ffffff";
+  return luminance > 0.58 ? "#111111" : "#ffffff";
 }
 
 function swatchColor(name: string): string {
