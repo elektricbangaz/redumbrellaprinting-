@@ -18,7 +18,7 @@ export function SiteFooter() {
   return <footer className="footer2">
     <div className="footer2-inner">
       <section className="footer2-brand">
-        <img src="/apple-touch-icon.png" alt="Red Umbrella Printing"/>
+        <img src="/android-chrome-512x512.png" alt="Red Umbrella Printing"/>
         <h3>RED UMBRELLA<br/>PRINTING</h3>
         <p>Full-service print factory for apparel, signage, vehicle graphics, promotional products and large-format work.</p>
         <div className="footer2-social">
