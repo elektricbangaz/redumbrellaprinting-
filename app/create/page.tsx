@@ -1,33 +1,84 @@
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { CORE_CATALOG } from "@/lib/catalog";
 import { DesignerApp } from "./DesignerApp";
-import { TSHIRT_COLLECTION_URL } from "@/lib/catalog-sources";
 
-export const dynamic="force-dynamic";
+export const dynamic = "force-dynamic";
 
-const imageOverrides:Record<string,string>={
- "standard-t-shirt":"/mockups/plain-white-shirt.webp",
- "pullover-hoodie":"/mockups/category-apparel.webp",
- "trucker-cap":"/mockups/category-apparel.webp"
-};
+export default async function CreatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ product?: string }>;
+}) {
+  const sp = await searchParams;
+  let products = CORE_CATALOG.map((p) => ({ ...p }));
 
-const fallbackProducts=[
- {id:"fallback-shirt",name:"Standard T-Shirt",slug:"standard-t-shirt",basePrice:1800,colors:["White","Black","Red","Navy"],sizes:["S","M","L","XL","2XL"],images:["/mockups/plain-white-shirt.webp"]},
- {id:"fallback-hoodie",name:"Pullover Hoodie",slug:"pullover-hoodie",basePrice:4800,colors:["Black","White","Grey"],sizes:["S","M","L","XL","2XL"],images:["/mockups/category-apparel.webp"]}
-];
+  try {
+    const synced = await Promise.all(
+      CORE_CATALOG.map((item) =>
+        prisma.product.upsert({
+          where: { slug: item.slug },
+          update: {
+            name: item.name,
+            category: item.category,
+            description: item.description,
+            basePrice: item.basePrice,
+            colors: item.colors,
+            sizes: item.sizes,
+            images: item.images,
+            active: true,
+          },
+          create: {
+            name: item.name,
+            slug: item.slug,
+            category: item.category,
+            description: item.description,
+            basePrice: item.basePrice,
+            colors: item.colors,
+            sizes: item.sizes,
+            images: item.images,
+            active: true,
+          },
+        })
+      )
+    );
 
-export default async function CreatePage({searchParams}:{searchParams:Promise<{product?:string}>}){
- const sp=await searchParams;
- let products:any[]=fallbackProducts;
- try{
-   const rows=await prisma.product.findMany({where:{active:true},orderBy:{createdAt:"asc"}});
-   if(rows.length){
-     products=rows.map(p=>({id:p.id,name:p.name,slug:p.slug,basePrice:p.basePrice,colors:p.colors as string[],sizes:p.sizes as string[],images:[imageOverrides[p.slug]||(p.images as string[])[0]]}));
-   }
- }catch(error){
-   console.error("Create Studio database unavailable; using fallback products.", error);
- }
- const selected=products.find(p=>p.slug===sp.product)||products[0];
- return <main className="sf"><SiteHeader/><section className="content-hero content-hero-compact"><span>CREATE STUDIO</span><h1>Make it yours.</h1><p>Choose a product, upload artwork or add text, preview the print area, then add the finished configuration to your cart.</p><a className="catalog-source-link" href={TSHIRT_COLLECTION_URL} target="_blank" rel="noreferrer">Browse approved T-shirt blanks ↗</a></section><section className="designer-shell"><DesignerApp products={products} initialProductId={selected.id}/></section><SiteFooter/></main>;
+    products = synced.map((row) => {
+      const source = CORE_CATALOG.find((p) => p.slug === row.slug)!;
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        category: row.category,
+        basePrice: row.basePrice,
+        colors: row.colors as string[],
+        sizes: row.sizes as string[],
+        images: source.images,
+        quoteOnly: source.quoteOnly ?? false,
+      };
+    });
+  } catch (error) {
+    console.error("Create Studio database unavailable; using resilient catalog.", error);
+  }
+
+  const selected = products.find((p) => p.slug === sp.product) || products[0];
+
+  return (
+    <main className="sf">
+      <SiteHeader />
+      <section className="content-hero content-hero-compact create-intro-v3">
+        <span>CREATE STUDIO</span>
+        <h1>Make it yours.</h1>
+        <p>
+          Select any product, add artwork or text, preview it on the item, then order directly
+          or continue into a production quote for custom jobs.
+        </p>
+      </section>
+      <section className="designer-shell">
+        <DesignerApp products={products} initialProductId={selected.id} />
+      </section>
+      <SiteFooter />
+    </main>
+  );
 }
