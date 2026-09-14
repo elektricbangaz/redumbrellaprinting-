@@ -29,7 +29,7 @@ export function SiteHeader() {
       </div>
       <header className="site2-header">
         <a className="site2-brand" href="/" aria-label="Red Umbrella Printing home">
-          <img src="/apple-touch-icon.png" alt="Red Umbrella Printing" />
+          <img src="/android-chrome-512x512.png" alt="Red Umbrella Printing" />
         </a>
 
         <nav className="site2-nav" aria-label="Primary">
