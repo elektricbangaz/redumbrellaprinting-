@@ -501,3 +501,24 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .designer-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
   .designer-actions button{justify-content:center}
 }
+
+
+/* True 3D apparel configurator */
+.designer-canvas-true3d{background:
+  radial-gradient(circle at 50% 24%,rgba(255,255,255,.12),transparent 26%),
+  linear-gradient(180deg,#191a1d 0%,#0d0e10 100%)!important;
+  min-height:600px!important;
+  overflow:hidden;
+}
+.three-shirt-viewer{position:absolute;inset:0;cursor:grab;touch-action:none}
+.three-shirt-viewer:active{cursor:grabbing}
+.three-shirt-viewer canvas{display:block;width:100%!important;height:100%!important}
+.smart-color-note{display:flex;align-items:center;gap:7px;font-size:10px;color:#666;margin-top:6px}
+.smart-color-note strong{color:#222}
+.smart-color-chip{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #bbb;box-shadow:0 0 0 2px #fff}
+.designer-position-grid{display:grid;gap:7px;padding:10px;border:1px solid #ececec;border-radius:9px;background:#fafafa}
+.designer-canvas-true3d+.designer-actions{border-top:0}
+@media(max-width:760px){
+  .designer-canvas-true3d{min-height:480px!important}
+  .designer-3d-hint{color:#777}
+}
