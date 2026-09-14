@@ -51,6 +51,7 @@ export default async function CreatePage({
         name: row.name,
         slug: row.slug,
         category: row.category,
+        description: row.description || source.description,
         basePrice: row.basePrice,
         colors: row.colors as string[],
         sizes: row.sizes as string[],
