@@ -439,3 +439,5 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .footer2-brand{grid-template-columns:64px 1fr!important}
   .footer2-brand img{width:64px;height:64px}
 }
+
+.catalog-source-link{display:inline-flex;margin-top:14px;font-size:13px;font-weight:800;color:#d20d14;text-decoration:underline;text-underline-offset:3px}
