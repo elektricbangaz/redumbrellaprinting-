@@ -117,6 +117,7 @@ export function ThreeShirtViewer({ productSlug, colorName, side, design, classNa
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    const container = mount;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
@@ -229,8 +230,8 @@ export function ThreeShirtViewer({ productSlug, colorName, side, design, classNa
     controls.target.set(0, 0, 0);
 
     function resize() {
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
@@ -239,7 +240,7 @@ export function ThreeShirtViewer({ productSlug, colorName, side, design, classNa
     resize();
 
     const observer = new ResizeObserver(resize);
-    observer.observe(mount);
+    observer.observe(container);
 
     let frame = 0;
     let idle = 0;
@@ -266,7 +267,7 @@ export function ThreeShirtViewer({ productSlug, colorName, side, design, classNa
       material.dispose();
       renderer.dispose();
       renderer.domElement.remove();
-      mount.removeChild(renderer.domElement);
+      if (renderer.domElement.parentElement === container) container.removeChild(renderer.domElement);
     };
   }, [productSlug, colorName, side, layers]);
 
