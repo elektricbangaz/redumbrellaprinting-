@@ -17,6 +17,7 @@ export type CartDesign = {
 export type CartItem = {
   cartItemId: string;
   productId: string;
+  productSlug?: string;
   productName: string;
   productImage: string;
   color: string;
