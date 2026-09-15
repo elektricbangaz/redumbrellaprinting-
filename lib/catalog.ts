@@ -9,6 +9,7 @@ export type CatalogProduct = {
   sizes: string[];
   images: string[];
   quoteOnly?: boolean;
+  previewMode?: "apparel3d" | "cylinder3d" | "flat" | "vehicle";
 };
 
 export const CORE_CATALOG: CatalogProduct[] = [
@@ -22,6 +23,7 @@ export const CORE_CATALOG: CatalogProduct[] = [
     colors: ["White", "Black", "Red", "Navy"],
     sizes: ["S", "M", "L", "XL", "2XL"],
     images: ["https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Tshirt.png"],
+    previewMode: "apparel3d",
   },
   {
     id: "catalog-polo-shirt",
@@ -33,6 +35,7 @@ export const CORE_CATALOG: CatalogProduct[] = [
     colors: ["White", "Black", "Navy", "Red"],
     sizes: ["S", "M", "L", "XL", "2XL"],
     images: ["https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Polo_Tshirt.png"],
+    previewMode: "apparel3d",
   },
   {
     id: "catalog-hoodie",
@@ -41,9 +44,22 @@ export const CORE_CATALOG: CatalogProduct[] = [
     category: "Hoodies",
     description: "Pullover hoodie ready for custom front or back artwork.",
     basePrice: 4800,
-    colors: ["Black", "White", "Grey"],
+    colors: ["Black", "White", "Grey", "Navy", "Red"],
     sizes: ["S", "M", "L", "XL", "2XL"],
-    images: ["/mockups/hoodie-black.webp"],
+    images: ["/mockups/category-apparel.webp"],
+    previewMode: "apparel3d",
+  },
+  {
+    id: "catalog-mug",
+    name: "Custom Mug",
+    slug: "custom-mug",
+    category: "Mugs & Drinkware",
+    description: "Full-wrap ceramic mug preview with artwork placed around the printable cylinder.",
+    basePrice: 2200,
+    colors: ["White", "Black"],
+    sizes: ["11oz", "15oz"],
+    images: ["/mockups/category-promotional.webp"],
+    previewMode: "cylinder3d",
   },
   {
     id: "catalog-bottle",
@@ -53,20 +69,22 @@ export const CORE_CATALOG: CatalogProduct[] = [
     description: "Branded drinkware for corporate, event and promotional use.",
     basePrice: 2500,
     colors: ["White", "Black", "Gold"],
-    sizes: ["Standard"],
+    sizes: ["500ml", "750ml"],
     images: ["/mockups/category-promotional.webp"],
+    previewMode: "cylinder3d",
   },
   {
     id: "catalog-signage",
     name: "Custom Signage",
     slug: "custom-signage",
     category: "Signs & Displays",
-    description: "Acrylic, LED, routed and display signage configured in Create and finalized by production quote.",
+    description: "Acrylic, LED, routed and display signage configured visually and finalized by production quote.",
     basePrice: 0,
     colors: ["Custom"],
-    sizes: ["Custom"],
+    sizes: ["12x12", "12x18", "18x24", "24x24", "24x36", "36x36", "36x48", "48x48", "48x60", "48x72", "48x84", "48x96"],
     images: ["/mockups/category-signage.webp"],
     quoteOnly: true,
+    previewMode: "flat",
   },
   {
     id: "catalog-vehicle",
@@ -76,20 +94,38 @@ export const CORE_CATALOG: CatalogProduct[] = [
     description: "Fleet wraps, decals and branded vehicle graphics configured visually then priced to vehicle and coverage.",
     basePrice: 0,
     colors: ["Custom"],
-    sizes: ["Vehicle-specific"],
+    sizes: ["Cargo Van - Side", "Cargo Van - Rear", "Sedan - Side", "SUV - Side"],
     images: ["/mockups/category-vehicle.webp"],
     quoteOnly: true,
+    previewMode: "vehicle",
   },
   {
     id: "catalog-banner",
     name: "Banners & Large Format",
     slug: "banners-large-format",
     category: "Banners & Prints",
-    description: "Vinyl banners, mesh, posters and large-format print configured in Create and finalized by quote.",
+    description: "Dimension-accurate vinyl banners, posters, signs and step-and-repeat graphics.",
     basePrice: 0,
     colors: ["Custom"],
-    sizes: ["Custom"],
+    sizes: [
+      "24x36 A-Frame",
+      "12x12 Poster/Sign",
+      "12x18 Poster/Sign",
+      "18x24 Poster/Sign",
+      "24x24 Poster/Sign",
+      "24x36 Poster/Sign",
+      "36x36 Poster/Sign",
+      "36x48 Poster/Sign",
+      "48x48 Poster/Sign",
+      "48x60 Poster/Sign",
+      "48x72 Poster/Sign",
+      "48x84 Poster/Sign",
+      "48x96 Poster/Sign",
+      "96x96 Step & Repeat",
+      "120x96 Step & Repeat"
+    ],
     images: ["/mockups/category-banners.webp"],
     quoteOnly: true,
+    previewMode: "flat",
   },
 ];
