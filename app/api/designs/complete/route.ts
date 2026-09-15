@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { CORE_CATALOG } from "@/lib/catalog";
 import { uploadDataUrl } from "@/lib/cloudinary-server";
 
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
         color: input.color,
         previewImage: preview?.secure_url,
         canvasData: {
-          design: input.design,
+          design: input.design as Prisma.InputJsonValue,
           productSlug: input.productSlug,
           productName: input.productName,
           color: input.color,
