@@ -57,6 +57,7 @@ export default async function CreatePage({
         sizes: row.sizes as string[],
         images: source.images,
         quoteOnly: source.quoteOnly ?? false,
+        previewMode: source.previewMode,
       };
     });
   } catch (error) {
