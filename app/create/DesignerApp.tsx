@@ -67,6 +67,7 @@ export function DesignerApp({
   const [uploadError, setUploadError] = useState("");
   const [added, setAdded] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
@@ -268,7 +269,8 @@ export function DesignerApp({
 
   return (
     <div className="designer-page designer-v3">
-      <div className="designer-panel">
+      <div className={`designer-panel ${toolsOpen ? "mobile-open" : ""}`}>
+        <button type="button" className="designer-mobile-close" onClick={() => setToolsOpen(false)} aria-label="Close design tools">×</button>
         <div className="designer-field product-picker">
           <h4>
             <Layers size={14} /> Choose Product
@@ -485,6 +487,33 @@ export function DesignerApp({
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="designer-mobile-quick">
+        <label>
+          <span>Product</span>
+          <select value={productId} onChange={(e) => selectProduct(e.target.value)}>
+            {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
+        <div className="mobile-colors">
+          <span>Colour</span>
+          <div className="color-swatches">
+            {product.colors.map((c) => (
+              <button
+                type="button"
+                key={c}
+                className={`color-swatch ${color === c ? "selected" : ""}`}
+                style={{ background: swatchColor(c) }}
+                onClick={() => selectColor(c)}
+                aria-label={`Select ${c}`}
+              />
+            ))}
+          </div>
+        </div>
+        <button type="button" className="designer-mobile-tools-toggle" onClick={() => setToolsOpen(true)}>
+          Design tools
+        </button>
       </div>
 
       <div className="designer-canvas-wrap">
