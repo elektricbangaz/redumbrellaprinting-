@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -85,6 +85,10 @@ export function DesignerApp({
   const [reference, setReference] = useState("");
   const [activeTool, setActiveTool] = useState<ToolId>("start");
   const [panelOpen, setPanelOpen] = useState(true);
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 760px)").matches) setPanelOpen(false);
+  }, []);
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
