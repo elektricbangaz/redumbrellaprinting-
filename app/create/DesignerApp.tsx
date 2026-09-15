@@ -84,10 +84,14 @@ export function DesignerApp({
   const [completeError, setCompleteError] = useState("");
   const [reference, setReference] = useState("");
   const [activeTool, setActiveTool] = useState<ToolId>("start");
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(max-width: 760px)").matches) setPanelOpen(false);
+    const mq = window.matchMedia("(min-width: 761px)");
+    const sync = () => setPanelOpen(mq.matches);
+    sync();
+    mq.addEventListener?.("change", sync);
+    return () => mq.removeEventListener?.("change", sync);
   }, []);
 
   const layers = design[side];
@@ -162,7 +166,7 @@ export function DesignerApp({
       align: "center",
       color: smartTextColor,
       fontSize: 30,
-      widthPct: 42,
+      widthPct: 32,
     };
     updateLayers((ls) => [...ls, layer]);
     setSelectedId(layer.id);
@@ -201,7 +205,7 @@ export function DesignerApp({
         y: 50,
         rotation: 0,
         src: reader.result as string,
-        widthPct: 46,
+        widthPct: 30,
       };
       updateLayers((ls) => [...ls, layer]);
       setSelectedId(layer.id);
