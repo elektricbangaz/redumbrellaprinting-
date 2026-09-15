@@ -69,7 +69,8 @@ export function DesignOverlay({
 
     const move = (ev: PointerEvent) => {
       const delta = ((ev.clientX - startX) / rect.width) * 100;
-      const maxWidth = Math.max(10, Math.min(80, 2 * Math.min(layer.x, 100 - layer.x)));\n      const nextWidth = Math.max(8, Math.min(maxWidth, initialWidth + delta));
+      const maxWidth = Math.max(10, Math.min(80, 2 * Math.min(layer.x, 100 - layer.x)));
+      const nextWidth = Math.max(8, Math.min(maxWidth, initialWidth + delta));
       if (layer.type === "text") {
         const scale = nextWidth / Math.max(1, initialWidth);
         onChange(layer.id, {
