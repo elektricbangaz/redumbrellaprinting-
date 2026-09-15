@@ -995,3 +995,85 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-lab-toolbar span{font-size:7px!important}
   .rup-complete-button{padding:0 12px!important}
 }
+
+
+/* Mobile Create Studio hardening */
+@media(max-width:760px){
+  html,body{overflow-x:hidden!important}
+  .create-app-page,.create-app-page .sf,.create-app-page .designer-shell,.rup-lab,.rup-lab-stage-shell,.rup-lab-stage-top,.rup-lab-canvas,.rup-lab-bottom{max-width:100vw!important;min-width:0!important;overflow-x:hidden!important}
+  .rup-lab-stage-top{grid-template-columns:minmax(0,1fr) auto!important}
+  .rup-side-tabs{min-width:0!important;max-width:154px!important}
+  .rup-stage-actions{min-width:0!important;max-width:48vw!important}
+  .rup-complete-button{
+    max-width:44vw!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+
+  .rup-lab-toolbar{
+    width:100vw!important;
+    max-width:100vw!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    column-gap:0!important;
+  }
+  .rup-lab-toolbar button{
+    min-width:0!important;
+    width:100%!important;
+    overflow:hidden!important;
+  }
+  .rup-lab-toolbar button span{
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .rup-lab-panel{
+    max-width:calc(100vw - 16px)!important;
+  }
+  .rup-lab-panel-body{
+    overflow-x:hidden!important;
+  }
+
+  .rup-welcome-grid{
+    width:100%!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .rup-welcome-grid button{
+    min-width:0!important;
+    width:100%!important;
+  }
+
+  .live-layer{
+    max-width:92%!important;
+  }
+  .live-layer.controls-only{
+    min-height:20px!important;
+  }
+  .live-corner{
+    width:30px!important;
+    height:30px!important;
+  }
+  .live-delete{left:-14px!important;top:-14px!important}
+  .live-duplicate{left:-14px!important;bottom:-14px!important}
+  .live-resize{right:-14px!important;bottom:-14px!important}
+  .live-rotate{right:-14px!important;top:-14px!important}
+
+  .rup-lab .apparel-edit-zone{
+    left:21%!important;
+    top:28%!important;
+    width:58%!important;
+    height:46%!important;
+  }
+  .rup-lab .cylinder-edit-zone{
+    left:18%!important;
+    top:25%!important;
+    width:64%!important;
+    height:50%!important;
+  }
+}
+@media(max-width:390px){
+  .rup-welcome-grid{grid-template-columns:1fr!important}
+  .rup-stage-actions{max-width:46vw!important}
+  .rup-complete-button{max-width:42vw!important;font-size:12px!important}
+}
