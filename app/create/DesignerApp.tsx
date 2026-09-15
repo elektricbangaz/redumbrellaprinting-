@@ -23,7 +23,7 @@ import { formatJMD } from "@/lib/money";
 import {
   DesignLayer,
   DesignSides,
-  FONT_OPTIONS,
+  STARTER_FONT_OPTIONS,
   ImageLayer,
   TextLayer,
 } from "@/lib/designer-types";
@@ -371,7 +371,7 @@ export function DesignerApp({
             onChange={(e) => updateSelectedText({ fontFamily: e.target.value })}
             disabled={selected?.type !== "text"}
           >
-            {FONT_OPTIONS.map((f) => (
+            {STARTER_FONT_OPTIONS.map((f) => (
               <option key={f} value={f}>
                 {f}
               </option>
