@@ -1,23 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useRef, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
   AlignRight,
   Bold,
+  Box,
+  ChevronLeft,
   Copy,
   Crosshair,
   Eye,
+  Image as ImageIcon,
   Italic,
-  Layers,
+  Layers3,
   Move,
+  Package2,
   Palette,
   RotateCw,
+  Sparkles,
   Trash2,
   Type,
   Upload,
+  X,
 } from "lucide-react";
 import { formatJMD } from "@/lib/money";
 import type { DesignLayer, DesignSides, ImageLayer, TextLayer } from "@/lib/designer-types";
@@ -43,6 +48,8 @@ type ProductOption = {
   previewMode?: "apparel3d" | "cylinder3d" | "flat" | "vehicle";
 };
 
+type ToolId = "start" | "product" | "upload" | "text" | "art" | "color" | "layers";
+
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 function newId() {
@@ -56,6 +63,7 @@ export function DesignerApp({
   products: ProductOption[];
   initialProductId: string;
 }) {
+  const uploadRef = useRef<HTMLInputElement>(null);
   const initial = products.find((p) => p.id === initialProductId) || products[0];
 
   const [productId, setProductId] = useState(initial.id);
@@ -69,29 +77,36 @@ export function DesignerApp({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
   const [uploadError, setUploadError] = useState("");
-  const [toolsOpen, setToolsOpen] = useState(false);
   const [editMode, setEditMode] = useState(true);
   const [previewImage, setPreviewImage] = useState("");
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completeBusy, setCompleteBusy] = useState(false);
   const [completeError, setCompleteError] = useState("");
   const [reference, setReference] = useState("");
+  const [activeTool, setActiveTool] = useState<ToolId>("start");
+  const [panelOpen, setPanelOpen] = useState(true);
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
-  const previewMode = product.previewMode || (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" : "flat");
+  const previewMode =
+    product.previewMode ||
+    (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" : "flat");
   const quoteOnly = Boolean(product.quoteOnly || product.basePrice <= 0);
   const price = product.basePrice * quantity;
   const smartTextColor = contrastTextColor(customColor);
-
-  const flatRatio = useMemo(() => dimensionsFromLabel(size)?.aspectRatio || (previewMode === "vehicle" ? 2.2 : 1.5), [size, previewMode]);
+  const flatRatio = useMemo(
+    () => dimensionsFromLabel(size)?.aspectRatio || (previewMode === "vehicle" ? 2.2 : 1.5),
+    [size, previewMode]
+  );
 
   function updateLayers(updater: (layers: DesignLayer[]) => DesignLayer[]) {
     setDesign((prev) => ({ ...prev, [side]: updater(prev[side]) }));
   }
 
   function updateLayer(id: string, patch: Partial<DesignLayer>) {
-    updateLayers((ls) => ls.map((layer) => layer.id === id ? ({ ...layer, ...patch } as DesignLayer) : layer));
+    updateLayers((ls) =>
+      ls.map((layer) => (layer.id === id ? ({ ...layer, ...patch } as DesignLayer) : layer))
+    );
   }
 
   function selectProduct(id: string) {
@@ -107,6 +122,14 @@ export function DesignerApp({
     setEditMode(true);
   }
 
+  function applySmartContrast(hex: string) {
+    const nextText = contrastTextColor(hex);
+    setDesign((prev) => ({
+      front: prev.front.map((l) => (l.type === "text" ? { ...l, color: nextText } : l)),
+      back: prev.back.map((l) => (l.type === "text" ? { ...l, color: nextText } : l)),
+    }));
+  }
+
   function selectGarmentColor(nextColor: string) {
     setColor(nextColor);
     const hex = normalizeColor(nextColor);
@@ -118,14 +141,6 @@ export function DesignerApp({
     setColor(hex);
     setCustomColor(hex);
     applySmartContrast(hex);
-  }
-
-  function applySmartContrast(hex: string) {
-    const nextText = contrastTextColor(hex);
-    setDesign((prev) => ({
-      front: prev.front.map((l) => l.type === "text" ? { ...l, color: nextText } : l),
-      back: prev.back.map((l) => l.type === "text" ? { ...l, color: nextText } : l),
-    }));
   }
 
   function addText() {
@@ -149,6 +164,7 @@ export function DesignerApp({
     setSelectedId(layer.id);
     setTextDraft("");
     setEditMode(true);
+    setActiveTool("text");
   }
 
   function updateSelectedText(patch: Partial<TextLayer>) {
@@ -186,6 +202,7 @@ export function DesignerApp({
       updateLayers((ls) => [...ls, layer]);
       setSelectedId(layer.id);
       setEditMode(true);
+      setActiveTool("layers");
     };
     reader.readAsDataURL(file);
   }
@@ -198,7 +215,12 @@ export function DesignerApp({
 
   function duplicateSelected() {
     if (!selected) return;
-    const copy = { ...selected, id: newId(), x: Math.min(95, selected.x + 4), y: Math.min(95, selected.y + 4) } as DesignLayer;
+    const copy = {
+      ...selected,
+      id: newId(),
+      x: Math.min(95, selected.x + 4),
+      y: Math.min(95, selected.y + 4),
+    } as DesignLayer;
     updateLayers((ls) => [...ls, copy]);
     setSelectedId(copy.id);
   }
@@ -217,6 +239,11 @@ export function DesignerApp({
   function centerSelected() {
     if (!selected) return;
     updateLayer(selected.id, { x: 50, y: 50 });
+  }
+
+  function openTool(tool: ToolId) {
+    setActiveTool(tool);
+    setPanelOpen(true);
   }
 
   async function submitCompletedDesign(customer: { name: string; email: string; phone: string }) {
@@ -277,7 +304,15 @@ export function DesignerApp({
           />
           {editMode && (
             <div className="design-edit-overlay apparel-edit-zone">
-              <DesignOverlay layers={layers} selectedId={selectedId} onSelect={setSelectedId} onChange={updateLayer} />
+              <DesignOverlay
+                layers={layers}
+                selectedId={selectedId}
+                onSelect={(id) => {
+                  setSelectedId(id);
+                  if (id) setActiveTool("layers");
+                }}
+                onChange={updateLayer}
+              />
             </div>
           )}
         </>
@@ -295,7 +330,15 @@ export function DesignerApp({
           />
           {editMode && (
             <div className="design-edit-overlay cylinder-edit-zone">
-              <DesignOverlay layers={layers} selectedId={selectedId} onSelect={setSelectedId} onChange={updateLayer} />
+              <DesignOverlay
+                layers={layers}
+                selectedId={selectedId}
+                onSelect={(id) => {
+                  setSelectedId(id);
+                  if (id) setActiveTool("layers");
+                }}
+                onChange={updateLayer}
+              />
             </div>
           )}
         </>
@@ -308,7 +351,10 @@ export function DesignerApp({
           size={size}
           layers={layers}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            if (id) setActiveTool("layers");
+          }}
           onChange={updateLayer}
         />
       )}
@@ -317,214 +363,345 @@ export function DesignerApp({
 
   return (
     <>
-      <div className="designer-page designer-v4">
-        <aside className={`designer-panel ${toolsOpen ? "mobile-open" : ""}`}>
-          <button type="button" className="designer-mobile-close" onClick={() => setToolsOpen(false)} aria-label="Close design tools">×</button>
-
-          <div className="designer-field product-picker">
-            <h4><Layers size={14} /> Choose Product</h4>
-            <motion.div className="product-visual-grid" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              {products.map((p) => (
-                <button type="button" key={p.id} className={p.id === productId ? "selected" : ""} onClick={() => selectProduct(p.id)}>
-                  <img src={p.images[0]} alt="" />
-                  <span>{p.name}</span>
-                </button>
-              ))}
-            </motion.div>
-          </div>
-
-          <div className="designer-field">
-            <h4><Palette size={14} /> Product Colour</h4>
-            <div className="color-swatches">
-              {product.colors.filter((c) => c !== "Custom").map((c) => (
-                <button
-                  type="button"
-                  key={c}
-                  className={`color-swatch ${color === c ? "selected" : ""}`}
-                  style={{ background: normalizeColor(c) }}
-                  onClick={() => selectGarmentColor(c)}
-                  title={c}
-                />
-              ))}
-              <label className="full-color-picker" title="Choose any colour">
-                <input type="color" value={customColor} onChange={(e) => selectCustomGarmentColor(e.target.value)} />
-                <span>+</span>
-              </label>
-            </div>
-            <div className="color-value-row">
-              <input value={customColor} onChange={(e) => /^#[0-9a-f]{6}$/i.test(e.target.value) && selectCustomGarmentColor(e.target.value)} />
-              <span style={{ background: customColor }} />
-            </div>
-          </div>
-
-          <div className="designer-field">
-            <h4><Upload size={14} /> Upload Artwork</h4>
-            <label
-              className="upload-box upload-box-live"
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag-active"); }}
-              onDragLeave={(e) => e.currentTarget.classList.remove("drag-active")}
-              onDrop={(e) => { e.currentTarget.classList.remove("drag-active"); handleDrop(e); }}
-            >
-              <Upload size={24} />
-              <strong>Drop artwork here</strong>
-              <span>or click to browse — PNG, JPG, WEBP, SVG</span>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleUpload(file);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {uploadError && <p className="designer-error">{uploadError}</p>}
-          </div>
-
-          <div className="designer-field">
-            <h4><Type size={14} /> Add Text</h4>
-            <div className="text-add-row">
-              <input
-                type="text"
-                placeholder="Type your text…"
-                value={selected?.type === "text" ? selected.content : textDraft}
-                onChange={(e) => selected?.type === "text" ? updateSelectedText({ content: e.target.value }) : setTextDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && selected?.type !== "text") addText(); }}
-              />
-              {selected?.type !== "text" && <button type="button" onClick={addText}>Add</button>}
-            </div>
-
-            <FontPicker
-              value={selected?.type === "text" ? selected.fontFamily : "Montserrat"}
-              disabled={selected?.type !== "text"}
-              onChange={(fontFamily) => updateSelectedText({ fontFamily })}
-            />
-
-            {selected?.type === "text" && (
-              <>
-                <div className="text-style-grid">
-                  <label>
-                    <span>Text colour</span>
-                    <input type="color" value={selected.color} onChange={(e) => updateSelectedText({ color: e.target.value })} />
-                  </label>
-                  <label>
-                    <span>Size</span>
-                    <input type="range" min="12" max="96" value={selected.fontSize} onChange={(e) => updateSelectedText({ fontSize: Number(e.target.value) })} />
-                  </label>
-                  <label>
-                    <span>Wrap width</span>
-                    <input type="range" min="12" max="90" value={selected.widthPct ?? 42} onChange={(e) => updateSelectedText({ widthPct: Number(e.target.value) })} />
-                  </label>
-                </div>
-              </>
-            )}
-
-            {selected?.type === "image" && (
-              <label className="designer-range">
-                <span>Artwork size</span>
-                <input type="range" min="8" max="95" value={selected.widthPct} onChange={(e) => updateSelectedImage({ widthPct: Number(e.target.value) })} />
-              </label>
-            )}
-
-            <div className="text-toolbar">
-              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.bold ? "active" : ""} onClick={() => updateSelectedText({ bold: selected && selected.type === "text" ? !selected.bold : false })}><Bold size={14} /></button>
-              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.italic ? "active" : ""} onClick={() => updateSelectedText({ italic: selected && selected.type === "text" ? !selected.italic : false })}><Italic size={14} /></button>
-              <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "left" })}><AlignLeft size={14} /></button>
-              <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "center" })}><AlignCenter size={14} /></button>
-              <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "right" })}><AlignRight size={14} /></button>
-            </div>
-          </div>
-
-          <div className="designer-field">
-            <h4>Quantity</h4>
-            <div className="qty-control">
-              <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</button>
-              <input value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))} />
-              <button type="button" onClick={() => setQuantity((q) => q + 1)}>+</button>
-            </div>
-          </div>
-        </aside>
-
-        <motion.div className="designer-mobile-quick" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <label>
+      <div className={`rup-lab ${panelOpen ? "panel-open" : "panel-closed"}`}>
+        <nav className="rup-lab-toolbar" aria-label="Design tools">
+          <button className={activeTool === "start" ? "active" : ""} onClick={() => openTool("start")} type="button">
+            <Sparkles />
+            <span>Start</span>
+          </button>
+          <button className={activeTool === "product" ? "active" : ""} onClick={() => openTool("product")} type="button">
+            <Package2 />
             <span>Product</span>
-            <select value={productId} onChange={(e) => selectProduct(e.target.value)}>
-              {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </label>
-          <div className="mobile-colors">
+          </button>
+          <button className={activeTool === "upload" ? "active" : ""} onClick={() => openTool("upload")} type="button">
+            <Upload />
+            <span>Upload</span>
+          </button>
+          <button className={activeTool === "text" ? "active" : ""} onClick={() => openTool("text")} type="button">
+            <Type />
+            <span>Text</span>
+          </button>
+          <button className={activeTool === "art" ? "active" : ""} onClick={() => openTool("art")} type="button">
+            <ImageIcon />
+            <span>Art</span>
+          </button>
+          <button className={activeTool === "color" ? "active" : ""} onClick={() => openTool("color")} type="button">
+            <Palette />
             <span>Colour</span>
-            <input type="color" value={customColor} onChange={(e) => selectCustomGarmentColor(e.target.value)} />
-          </div>
-          <button type="button" className="designer-mobile-tools-toggle" onClick={() => setToolsOpen(true)}>Design tools</button>
-        </motion.div>
+          </button>
+          <button className={activeTool === "layers" ? "active" : ""} onClick={() => openTool("layers")} type="button">
+            <Layers3 />
+            <span>Layers</span>
+          </button>
+        </nav>
 
-        <section className="designer-canvas-wrap">
-          <div className="designer-canvas-topline">
-            <div className="designer-canvas-tabs">
-              <button className={side === "front" ? "active" : ""} onClick={() => setSide("front")}>Front</button>
-              <button className={side === "back" ? "active" : ""} onClick={() => setSide("back")}>Back</button>
+        <aside className="rup-lab-panel">
+          <div className="rup-lab-panel-head">
+            <button type="button" className="rup-panel-back" onClick={() => setPanelOpen(false)} aria-label="Close tool panel">
+              <ChevronLeft />
+            </button>
+            <div>
+              <span>RED UMBRELLA DESIGN LAB</span>
+              <strong>{panelTitle(activeTool)}</strong>
             </div>
-            {(previewMode === "apparel3d" || previewMode === "cylinder3d") && (
-              <div className="designer-mode-toggle">
-                <button type="button" className={editMode ? "active" : ""} onClick={() => setEditMode(true)}><Move size={14} /> Place design</button>
-                <button type="button" className={!editMode ? "active" : ""} onClick={() => setEditMode(false)}><Eye size={14} /> Inspect 3D</button>
+            <button type="button" className="rup-panel-close" onClick={() => setPanelOpen(false)} aria-label="Close tool panel">
+              <X />
+            </button>
+          </div>
+
+          <div className="rup-lab-panel-body">
+            {activeTool === "start" && (
+              <div className="rup-welcome-panel">
+                <span className="rup-kicker">MAKE SOMETHING YOURS</span>
+                <h2>What would you like to do?</h2>
+                <p>Choose a product, upload your artwork, or start with text. Everything appears live on the product.</p>
+                <div className="rup-welcome-grid">
+                  <button onClick={() => openTool("upload")} type="button"><Upload /><strong>Upload artwork</strong><span>Logo, photo or design</span></button>
+                  <button onClick={() => openTool("text")} type="button"><Type /><strong>Add text</strong><span>Search Google Fonts</span></button>
+                  <button onClick={() => openTool("product")} type="button"><Package2 /><strong>Change product</strong><span>Shirts, mugs, banners + more</span></button>
+                  <button onClick={() => openTool("color")} type="button"><Palette /><strong>Choose colour</strong><span>Full colour control</span></button>
+                </div>
+              </div>
+            )}
+
+            {activeTool === "product" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">PRODUCT DETAILS</span>
+                  <h3>{product.name}</h3>
+                  <p>{product.description || "Choose the product you want to customise."}</p>
+                </div>
+                <div className="rup-product-grid">
+                  {products.map((p) => (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className={p.id === productId ? "selected" : ""}
+                      onClick={() => selectProduct(p.id)}
+                    >
+                      <img src={p.images[0]} alt="" />
+                      <strong>{p.name}</strong>
+                      <span>{p.category}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="rup-field-label">
+                  <span>{previewMode === "flat" || previewMode === "vehicle" ? "Dimensions / template" : "Size"}</span>
+                  <select value={size} onChange={(e) => setSize(e.target.value)}>
+                    {product.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {activeTool === "upload" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">UPLOAD</span>
+                  <h3>Bring your own artwork.</h3>
+                  <p>Drop a logo, photo or finished design here. Then drag, resize and rotate it directly on the product.</p>
+                </div>
+                <label
+                  className="rup-dropzone"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                >
+                  <Upload />
+                  <strong>Drop file here</strong>
+                  <span>or click to browse</span>
+                  <small>PNG, JPG, WEBP or SVG · Max 5MB</small>
+                  <input
+                    ref={uploadRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {uploadError && <div className="designer-error">{uploadError}</div>}
+                <button className="rup-secondary-action" type="button" onClick={() => uploadRef.current?.click()}>
+                  Choose from device
+                </button>
+              </div>
+            )}
+
+            {activeTool === "text" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">ADD TEXT</span>
+                  <h3>{selected?.type === "text" ? "Edit text" : "Create a text layer"}</h3>
+                  <p>Type it, choose a Google Font, set the colour and place it anywhere in the print area.</p>
+                </div>
+                <label className="rup-field-label">
+                  <span>Text</span>
+                  <input
+                    type="text"
+                    placeholder="Type your text…"
+                    value={selected?.type === "text" ? selected.content : textDraft}
+                    onChange={(e) =>
+                      selected?.type === "text"
+                        ? updateSelectedText({ content: e.target.value })
+                        : setTextDraft(e.target.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && selected?.type !== "text") addText();
+                    }}
+                  />
+                </label>
+                {selected?.type !== "text" && (
+                  <button className="rup-primary-action" type="button" onClick={addText}>Add text to design</button>
+                )}
+                <FontPicker
+                  value={selected?.type === "text" ? selected.fontFamily : "Montserrat"}
+                  disabled={selected?.type !== "text"}
+                  onChange={(fontFamily) => updateSelectedText({ fontFamily })}
+                />
+                {selected?.type === "text" && (
+                  <>
+                    <div className="rup-inline-fields">
+                      <label>
+                        <span>Colour</span>
+                        <input type="color" value={selected.color} onChange={(e) => updateSelectedText({ color: e.target.value })} />
+                      </label>
+                      <label>
+                        <span>Size</span>
+                        <input type="range" min="12" max="96" value={selected.fontSize} onChange={(e) => updateSelectedText({ fontSize: Number(e.target.value) })} />
+                      </label>
+                    </div>
+                    <label className="rup-field-label">
+                      <span>Wrap width</span>
+                      <input type="range" min="12" max="90" value={selected.widthPct ?? 42} onChange={(e) => updateSelectedText({ widthPct: Number(e.target.value) })} />
+                    </label>
+                    <div className="rup-format-row">
+                      <button className={selected.bold ? "active" : ""} onClick={() => updateSelectedText({ bold: !selected.bold })} type="button"><Bold /></button>
+                      <button className={selected.italic ? "active" : ""} onClick={() => updateSelectedText({ italic: !selected.italic })} type="button"><Italic /></button>
+                      <button onClick={() => updateSelectedText({ align: "left" })} type="button"><AlignLeft /></button>
+                      <button onClick={() => updateSelectedText({ align: "center" })} type="button"><AlignCenter /></button>
+                      <button onClick={() => updateSelectedText({ align: "right" })} type="button"><AlignRight /></button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTool === "art" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">ADD ART</span>
+                  <h3>Artwork starts with your files.</h3>
+                  <p>Use your own logo, illustration or image. A Red Umbrella clip-art library can plug into this same panel later without changing the editor.</p>
+                </div>
+                <button className="rup-art-card" onClick={() => openTool("upload")} type="button">
+                  <Upload />
+                  <strong>Upload your artwork</strong>
+                  <span>Best for logos, event graphics and finished designs</span>
+                </button>
+                <button className="rup-art-card" onClick={() => openTool("text")} type="button">
+                  <Type />
+                  <strong>Build with type</strong>
+                  <span>Create a typographic design with Google Fonts</span>
+                </button>
+              </div>
+            )}
+
+            {activeTool === "color" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">COLOUR</span>
+                  <h3>Make the product any colour.</h3>
+                  <p>Use a stock colour or open the full picker. New text automatically starts with a contrasting colour.</p>
+                </div>
+                <div className="rup-colour-swatches">
+                  {product.colors.filter((c) => c !== "Custom").map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={color === c ? "selected" : ""}
+                      onClick={() => selectGarmentColor(c)}
+                    >
+                      <span style={{ background: normalizeColor(c) }} />
+                      <strong>{c}</strong>
+                    </button>
+                  ))}
+                </div>
+                <label className="rup-full-colour">
+                  <span>Custom colour</span>
+                  <div>
+                    <input type="color" value={customColor} onChange={(e) => selectCustomGarmentColor(e.target.value)} />
+                    <input value={customColor.toUpperCase()} onChange={(e) => /^#[0-9a-f]{6}$/i.test(e.target.value) && selectCustomGarmentColor(e.target.value)} />
+                  </div>
+                </label>
+              </div>
+            )}
+
+            {activeTool === "layers" && (
+              <div className="rup-tool-section">
+                <div className="rup-tool-copy">
+                  <span className="rup-kicker">LAYERS</span>
+                  <h3>{selected ? "Selected layer" : "Your design layers"}</h3>
+                  <p>Select an item on the product to edit it, or choose a layer below.</p>
+                </div>
+                <div className="rup-layer-list">
+                  {layers.length === 0 && <div className="rup-empty-state">No layers on the {side} yet.</div>}
+                  {layers.map((layer, index) => (
+                    <button
+                      key={layer.id}
+                      type="button"
+                      className={selectedId === layer.id ? "selected" : ""}
+                      onClick={() => setSelectedId(layer.id)}
+                    >
+                      <span>{index + 1}</span>
+                      <strong>{layer.type === "text" ? layer.content || "Text" : "Artwork"}</strong>
+                      <small>{layer.type === "text" ? layer.fontFamily : "Image layer"}</small>
+                    </button>
+                  ))}
+                </div>
+                {selected && (
+                  <>
+                    {selected.type === "image" && (
+                      <label className="rup-field-label">
+                        <span>Artwork size</span>
+                        <input type="range" min="8" max="95" value={selected.widthPct} onChange={(e) => updateSelectedImage({ widthPct: Number(e.target.value) })} />
+                      </label>
+                    )}
+                    <div className="rup-layer-actions">
+                      <button type="button" onClick={duplicateSelected}><Copy /> Duplicate</button>
+                      <button type="button" onClick={rotateSelected}><RotateCw /> Rotate</button>
+                      <button type="button" onClick={centerSelected}><Crosshair /> Center</button>
+                      <button type="button" onClick={deleteSelected} className="danger"><Trash2 /> Delete</button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
+        </aside>
 
-          <div className={`designer-canvas preview-${previewMode}`} onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
+        <section className="rup-lab-stage-shell">
+          <header className="rup-lab-stage-top">
+            <div className="rup-side-tabs">
+              <button className={side === "front" ? "active" : ""} onClick={() => setSide("front")} type="button">Front</button>
+              <button className={side === "back" ? "active" : ""} onClick={() => setSide("back")} type="button">Back</button>
+            </div>
+
+            <div className="rup-stage-product-label">
+              <Box />
+              <span><strong>{product.name}</strong>{size}</span>
+            </div>
+
+            <div className="rup-stage-actions">
+              {(previewMode === "apparel3d" || previewMode === "cylinder3d") && (
+                <div className="rup-view-toggle">
+                  <button className={editMode ? "active" : ""} onClick={() => setEditMode(true)} type="button"><Move /> Design</button>
+                  <button className={!editMode ? "active" : ""} onClick={() => setEditMode(false)} type="button"><Eye /> 3D view</button>
+                </div>
+              )}
+              <button
+                className="rup-complete-button"
+                type="button"
+                onClick={() => {
+                  setReference("");
+                  setCompleteError("");
+                  setCompleteOpen(true);
+                }}
+              >
+                Complete Design
+              </button>
+            </div>
+          </header>
+
+          <div className={`rup-lab-canvas preview-${previewMode}`} onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
             {livePreview}
           </div>
 
-          <div className="admin-toolbar designer-actions">
-            <button className="admin-link-button" disabled={!selected} onClick={duplicateSelected} type="button"><Copy size={13} /> Duplicate</button>
-            <button className="admin-link-button" disabled={!selected} onClick={deleteSelected} type="button"><Trash2 size={13} /> Delete</button>
-            <button className="admin-link-button" disabled={!selected} onClick={rotateSelected} type="button"><RotateCw size={13} /> Rotate</button>
-            <button className="admin-link-button" disabled={!selected} onClick={centerSelected} type="button"><Crosshair size={13} /> Center</button>
-          </div>
+          <footer className="rup-lab-bottom">
+            <div className="rup-bottom-product">
+              <img src={product.images[0]} alt="" />
+              <div><strong>{product.name}</strong><span>{product.category}</span></div>
+            </div>
+            <div className="rup-bottom-controls">
+              <label>
+                <span>Qty</span>
+                <div className="rup-qty">
+                  <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</button>
+                  <input value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))} />
+                  <button type="button" onClick={() => setQuantity((q) => q + 1)}>+</button>
+                </div>
+              </label>
+              {!quoteOnly ? (
+                <div className="rup-price-block">
+                  <span>Estimate</span>
+                  <strong>{formatJMD(price)}</strong>
+                </div>
+              ) : (
+                <div className="rup-price-block"><span>Pricing</span><strong>Custom quote</strong></div>
+              )}
+            </div>
+          </footer>
         </section>
-
-        <aside className="summary-panel design-submit-panel">
-          <div className="summary-product-preview">
-            <img src={product.images[0]} alt="" />
-            <div>
-              <small>{product.category || "Product"}</small>
-              <strong>{product.name}</strong>
-            </div>
-          </div>
-
-          <div className="designer-field">
-            <h4>{previewMode === "flat" || previewMode === "vehicle" ? "Dimensions / Template" : "Size"}</h4>
-            <select value={size} onChange={(e) => setSize(e.target.value)}>
-              {product.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-
-          {!quoteOnly && (
-            <>
-              <div className="summary-row"><span>Item price</span><span>{formatJMD(product.basePrice)}</span></div>
-              <div className="summary-row"><span>Quantity ({quantity})</span><span>{formatJMD(price)}</span></div>
-              <div className="summary-row total"><span>Estimate</span><span>{formatJMD(price)}</span></div>
-            </>
-          )}
-
-          {quoteOnly && (
-            <div className="quote-required-note">
-              Final pricing follows the submitted dimensions, material and production specifications.
-            </div>
-          )}
-
-          <button className="button button-red complete-design-button" type="button" onClick={() => { setReference(""); setCompleteError(""); setCompleteOpen(true); }}>
-            Complete Design
-          </button>
-
-          {quoteOnly && <a className="button button-outline" href={`/quote?product=${encodeURIComponent(product.slug)}`}>Continue to Production Quote</a>}
-
-          <p className="design-capture-note">
-            Saves artwork, font, colour, placement, dimensions and final mockup for Red Umbrella production.
-          </p>
-        </aside>
       </div>
 
       <CompleteDesignModal
@@ -537,6 +714,18 @@ export function DesignerApp({
       />
     </>
   );
+}
+
+function panelTitle(tool: ToolId) {
+  return {
+    start: "Design Lab",
+    product: "Product Details",
+    upload: "Upload",
+    text: "Add Text",
+    art: "Add Art",
+    color: "Colour",
+    layers: "Layers",
+  }[tool];
 }
 
 const COLOR_MAP: Record<string, string> = {
