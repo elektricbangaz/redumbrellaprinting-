@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlignCenter,
   AlignLeft,
@@ -275,7 +276,7 @@ export function DesignerApp({
           <h4>
             <Layers size={14} /> Choose Product
           </h4>
-          <div className="product-visual-grid">
+          <motion.div className="product-visual-grid" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }}>
             {products.map((p) => (
               <button
                 type="button"
@@ -288,7 +289,7 @@ export function DesignerApp({
                 <span>{p.name}</span>
               </button>
             ))}
-          </div>
+          </motion.div>
           <select value={productId} onChange={(e) => selectProduct(e.target.value)}>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -489,7 +490,7 @@ export function DesignerApp({
         </div>
       </div>
 
-      <div className="designer-mobile-quick">
+      <motion.div className="designer-mobile-quick" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
         <label>
           <span>Product</span>
           <select value={productId} onChange={(e) => selectProduct(e.target.value)}>
@@ -514,7 +515,7 @@ export function DesignerApp({
         <button type="button" className="designer-mobile-tools-toggle" onClick={() => setToolsOpen(true)}>
           Design tools
         </button>
-      </div>
+      </motion.div>
 
       <div className="designer-canvas-wrap">
         <div className="designer-canvas-topline">
