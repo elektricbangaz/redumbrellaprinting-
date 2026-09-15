@@ -14,6 +14,8 @@ type Props = {
   side: "front" | "back";
   design: DesignSides;
   className?: string;
+  interactive?: boolean;
+  onPreviewChange?: (dataUrl: string) => void;
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -26,7 +28,7 @@ const COLOR_MAP: Record<string, string> = {
   Gold: "#a97d3b",
 };
 
-const getHex = (name: string) => COLOR_MAP[name] || "#d8d8d4";
+const getHex = (name: string) => name.startsWith("#") ? name : (COLOR_MAP[name] || "#d8d8d4");
 
 async function renderDesignTexture(layers: DesignLayer[]) {
   const canvas = document.createElement("canvas");
@@ -94,6 +96,8 @@ export function PremiumGarmentViewer({
   side,
   design,
   className,
+  interactive = true,
+  onPreviewChange,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<"loading" | "ready" | "fallback">("loading");
@@ -138,6 +142,7 @@ export function PremiumGarmentViewer({
     controls.minPolarAngle = Math.PI * 0.24;
     controls.maxPolarAngle = Math.PI * 0.76;
     controls.autoRotate = false;
+    controls.enabled = interactive;
 
     const hemi = new THREE.HemisphereLight(0xffffff, 0xbfc2c5, 2.2);
     scene.add(hemi);
@@ -270,6 +275,10 @@ export function PremiumGarmentViewer({
 
         controls.target.set(0, 0, 0);
         setState("ready");
+        requestAnimationFrame(() => {
+          renderer.render(scene, camera);
+          try { onPreviewChange?.(renderer.domElement.toDataURL("image/png")); } catch {}
+        });
       },
       undefined,
       () => {
@@ -316,7 +325,7 @@ export function PremiumGarmentViewer({
       renderer.domElement.remove();
       container.innerHTML = "";
     };
-  }, [config?.modelUrl, productSlug, colorName, side, design]);
+  }, [config?.modelUrl, productSlug, colorName, side, design, interactive, onPreviewChange]);
 
   return (
     <div className={className || "premium-garment-viewer"}>
