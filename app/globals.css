@@ -745,3 +745,6 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-bottom-controls>label>span{display:none}
   .rup-price-block span{display:none}
 }
+
+.create-app-page .designer-shell{padding:0!important;margin:0!important;max-width:none!important;width:100%!important}
+@media(max-width:760px){.create-app-page .designer-shell{padding:0!important}}
