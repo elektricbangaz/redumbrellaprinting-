@@ -118,6 +118,7 @@ function CheckoutModal({ onClose }: { onClose: () => void }) {
           paymentProvider: provider,
           items: cart.items.map((i) => ({
             productId: i.productId,
+            productSlug: i.productSlug,
             size: i.size,
             color: i.color,
             quantity: i.quantity,
