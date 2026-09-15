@@ -37,13 +37,15 @@ export function DesignOverlay({
     const startY = e.clientY;
     const initialX = layer.x;
     const initialY = layer.y;
+    const widthPct = layer.type === "image" ? layer.widthPct : (layer.widthPct ?? 34);
+    const halfW = Math.max(4, Math.min(46, widthPct / 2));
 
     const move = (ev: PointerEvent) => {
       const dx = ((ev.clientX - startX) / rect.width) * 100;
       const dy = ((ev.clientY - startY) / rect.height) * 100;
       onChange(layer.id, {
-        x: Math.max(1, Math.min(99, initialX + dx)),
-        y: Math.max(1, Math.min(99, initialY + dy)),
+        x: Math.max(halfW, Math.min(100 - halfW, initialX + dx)),
+        y: Math.max(6, Math.min(94, initialY + dy)),
       });
     };
     const up = () => {
@@ -67,7 +69,7 @@ export function DesignOverlay({
 
     const move = (ev: PointerEvent) => {
       const delta = ((ev.clientX - startX) / rect.width) * 100;
-      const nextWidth = Math.max(8, Math.min(94, initialWidth + delta));
+      const maxWidth = Math.max(10, Math.min(80, 2 * Math.min(layer.x, 100 - layer.x)));\n      const nextWidth = Math.max(8, Math.min(maxWidth, initialWidth + delta));
       if (layer.type === "text") {
         const scale = nextWidth / Math.max(1, initialWidth);
         onChange(layer.id, {
