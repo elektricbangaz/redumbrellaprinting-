@@ -427,8 +427,8 @@ export function DesignerApp({
             )}
 
             <div className="text-toolbar">
-              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.bold ? "active" : ""} onClick={() => updateSelectedText({ bold: !selected?.bold })}><Bold size={14} /></button>
-              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.italic ? "active" : ""} onClick={() => updateSelectedText({ italic: !selected?.italic })}><Italic size={14} /></button>
+              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.bold ? "active" : ""} onClick={() => updateSelectedText({ bold: selected && selected.type === "text" ? !selected.bold : false })}><Bold size={14} /></button>
+              <button type="button" disabled={selected?.type !== "text"} className={selected?.type === "text" && selected.italic ? "active" : ""} onClick={() => updateSelectedText({ italic: selected && selected.type === "text" ? !selected.italic : false })}><Italic size={14} /></button>
               <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "left" })}><AlignLeft size={14} /></button>
               <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "center" })}><AlignCenter size={14} /></button>
               <button type="button" disabled={selected?.type !== "text"} onClick={() => updateSelectedText({ align: "right" })}><AlignRight size={14} /></button>
