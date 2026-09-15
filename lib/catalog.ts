@@ -35,7 +35,7 @@ export const CORE_CATALOG: CatalogProduct[] = [
     colors: ["White", "Black", "Navy", "Red"],
     sizes: ["S", "M", "L", "XL", "2XL"],
     images: ["https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Polo_Tshirt.png"],
-    previewMode: "apparel3d",
+    previewMode: "flat",
   },
   {
     id: "catalog-hoodie",
@@ -47,7 +47,7 @@ export const CORE_CATALOG: CatalogProduct[] = [
     colors: ["Black", "White", "Grey", "Navy", "Red"],
     sizes: ["S", "M", "L", "XL", "2XL"],
     images: ["/mockups/category-apparel.webp"],
-    previewMode: "apparel3d",
+    previewMode: "flat",
   },
   {
     id: "catalog-mug",
