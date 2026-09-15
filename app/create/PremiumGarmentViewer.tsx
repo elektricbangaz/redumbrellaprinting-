@@ -347,7 +347,7 @@ export function PremiumGarmentViewer({
       {state === "fallback" && (
         <div className="viewer-fallback">
           <img src={config?.fallbackImage || "/mockups/plain-white-shirt.webp"} alt="" />
-          <small>3D model pending for this garment</small>
+          <small>Preview this product and place your design.</small>
         </div>
       )}
     </div>
