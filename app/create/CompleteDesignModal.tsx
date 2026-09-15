@@ -34,7 +34,7 @@ export function CompleteDesignModal({
             <span>DESIGN CAPTURED</span>
             <h2>Your design is locked in.</h2>
             <p>
-              Red Umbrella has the mockup, artwork placement, font selection, colours and production metadata.
+              Your design has been sent to Red Umbrella. Our team will review it and contact you with the next step.
             </p>
             <strong>{reference}</strong>
             <button className="button button-red" onClick={onClose}>Done</button>
@@ -44,7 +44,7 @@ export function CompleteDesignModal({
             <span className="modal-kicker">COMPLETE DESIGN</span>
             <h2>Send this design to Red Umbrella.</h2>
             <p>
-              We’ll capture the final mockup and production data exactly as configured.
+              Send us your finished design and contact details. We’ll review everything and confirm the next step with you.
             </p>
             <label>Full name<input value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
@@ -59,7 +59,7 @@ export function CompleteDesignModal({
               {busy ? "Saving design…" : "Submit Final Design"}
             </button>
             <small>
-              Customer artwork and generated previews are stored with the design record for production.
+              After you submit, our team will review your design and contact you to confirm production details.
             </small>
           </>
         )}
