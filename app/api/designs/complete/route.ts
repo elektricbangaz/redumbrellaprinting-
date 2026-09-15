@@ -76,6 +76,28 @@ export async function POST(req: Request) {
     const folder = `red-umbrella/designs/${customer.id}/${input.productSlug}`;
     const stamp = Date.now().toString();
 
+    const persistArtwork = async (designValue: unknown) => {
+      if (!designValue || typeof designValue !== "object") return designValue as Prisma.InputJsonValue;
+      const sourceDesign = structuredClone(designValue as Record<string, unknown>) as any;
+      for (const sideName of ["front", "back"]) {
+        const sideLayers = Array.isArray(sourceDesign?.[sideName]) ? sourceDesign[sideName] : [];
+        for (let index = 0; index < sideLayers.length; index += 1) {
+          const layer = sideLayers[index];
+          if (layer?.type !== "image" || typeof layer?.src !== "string" || !layer.src.startsWith("data:")) continue;
+          const uploaded = await uploadDataUrl({
+            dataUrl: layer.src,
+            folder: `${folder}/artwork`,
+            publicId: `${stamp}-${sideName}-layer-${index + 1}`,
+          });
+          layer.src = uploaded.secure_url;
+          layer.cloudinaryPublicId = uploaded.public_id;
+        }
+      }
+      return sourceDesign as Prisma.InputJsonValue;
+    };
+
+    const persistedDesign = await persistArtwork(input.design);
+
     const [front, back, preview] = await Promise.all([
       input.frontExport
         ? uploadDataUrl({ dataUrl: input.frontExport, folder, publicId: `${stamp}-front` })
@@ -95,7 +117,7 @@ export async function POST(req: Request) {
         color: input.color,
         previewImage: preview?.secure_url,
         canvasData: {
-          design: input.design as Prisma.InputJsonValue,
+          design: persistedDesign,
           productSlug: input.productSlug,
           productName: input.productName,
           color: input.color,
