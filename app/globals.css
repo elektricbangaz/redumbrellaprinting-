@@ -748,3 +748,33 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 
 .create-app-page .designer-shell{padding:0!important;margin:0!important;max-width:none!important;width:100%!important}
 @media(max-width:760px){.create-app-page .designer-shell{padding:0!important}}
+
+
+/* Direct manipulation polish */
+.live-layer{box-sizing:border-box}
+.live-layer.controls-only>img,.live-layer.controls-only>.live-text-layer{opacity:.001}
+.live-layer.controls-only{min-height:28px}
+.live-layer.selected{outline:1.5px solid #2457ff;outline-offset:3px}
+.live-corner{position:absolute;z-index:5;width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);display:grid;place-items:center;color:#2457ff;cursor:pointer}
+.live-corner svg{width:15px;height:15px;stroke-width:2.3}
+.live-delete{left:-18px;top:-18px;color:#e22}
+.live-duplicate{left:-18px;bottom:-18px}
+.live-resize{right:-18px;bottom:-18px}
+.live-resize::after{content:"";width:10px;height:10px;border-right:2px solid #2457ff;border-bottom:2px solid #2457ff}
+.live-rotate{right:-18px;top:-18px}
+.live-text-layer{line-height:1.02;word-break:normal;overflow-wrap:break-word}
+.blank-production-surface{background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.09)}
+.blank-production-surface::before,.blank-production-surface::after{content:"";position:absolute;width:8px;height:8px;border:1px solid #bbb;border-radius:50%;top:10px;background:#f8f8f8}
+.blank-production-surface::before{left:10px}
+.blank-production-surface::after{right:10px}
+.flat-vehicle-graphics .flat-product-base{object-fit:contain!important;background:#f6f6f4}
+.flat-custom-signage .flat-product-base{object-fit:contain!important;background:#f6f6f4}
+.flat-polo-shirt .flat-product-base,.flat-pullover-hoodie .flat-product-base{object-fit:contain!important;background:#fff}
+.complete-design-modal small{font-size:12px;line-height:1.45;color:#666}
+@media(max-width:760px){
+  .live-corner{width:34px;height:34px}
+  .live-delete{left:-20px;top:-20px}
+  .live-duplicate{left:-20px;bottom:-20px}
+  .live-resize{right:-20px;bottom:-20px}
+  .live-rotate{right:-20px;top:-20px}
+}
