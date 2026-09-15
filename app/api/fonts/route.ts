@@ -16,9 +16,15 @@ export async function GET() {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!res.ok) throw new Error("Google Fonts metadata unavailable");
-    const raw = await res.text();
-    const json = JSON.parse(raw.replace(/^)]}'
-?/, ""));
+
+    let raw = await res.text();
+    const prefix = ")]}'";
+    if (raw.startsWith(prefix)) {
+      raw = raw.slice(prefix.length);
+      if (raw.startsWith("\n")) raw = raw.slice(1);
+    }
+
+    const json = JSON.parse(raw);
     const list: GoogleFont[] = (json.familyMetadataList || []).map((font: any) => ({
       family: font.family,
       category: font.category,
@@ -27,21 +33,18 @@ export async function GET() {
     }));
     list.sort((a, b) => (a.popularity ?? 9999) - (b.popularity ?? 9999));
     return NextResponse.json({ fonts: list });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        fonts: [
-          { family: "Montserrat", category: "Sans Serif" },
-          { family: "Oswald", category: "Sans Serif" },
-          { family: "Roboto", category: "Sans Serif" },
-          { family: "Poppins", category: "Sans Serif" },
-          { family: "Bebas Neue", category: "Display" },
-          { family: "Archivo Black", category: "Display" },
-          { family: "Playfair Display", category: "Serif" },
-          { family: "Lobster", category: "Handwriting" },
-        ],
-      },
-      { status: 200 }
-    );
+  } catch {
+    return NextResponse.json({
+      fonts: [
+        { family: "Montserrat", category: "Sans Serif" },
+        { family: "Oswald", category: "Sans Serif" },
+        { family: "Roboto", category: "Sans Serif" },
+        { family: "Poppins", category: "Sans Serif" },
+        { family: "Bebas Neue", category: "Display" },
+        { family: "Archivo Black", category: "Display" },
+        { family: "Playfair Display", category: "Serif" },
+        { family: "Lobster", category: "Handwriting" },
+      ],
+    });
   }
 }
