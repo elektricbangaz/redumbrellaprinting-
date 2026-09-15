@@ -583,3 +583,165 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .complete-design-modal{padding:24px 18px 18px;border-radius:16px}
   .complete-design-modal h2{font-size:26px}
 }
+
+
+/* ==========================================================================
+   RED UMBRELLA DESIGN LAB — dedicated designer workspace
+   ========================================================================== */
+.rup-lab{--lab-red:#d20d14;--lab-ink:#111317;--lab-line:#e5e5e5;--lab-muted:#6c7075;display:grid;grid-template-columns:88px 360px minmax(0,1fr);height:calc(100dvh - 84px);min-height:700px;background:#f4f4f2;border-top:1px solid var(--lab-line);overflow:hidden}
+.rup-lab.panel-closed{grid-template-columns:88px 0 minmax(0,1fr)}
+.rup-lab-toolbar{background:#fff;border-right:1px solid var(--lab-line);padding:14px 8px;display:flex;flex-direction:column;gap:5px;z-index:30;overflow:auto}
+.rup-lab-toolbar button{position:relative;border:0;background:transparent;border-radius:12px;min-height:68px;padding:7px 4px;display:grid;place-items:center;gap:4px;cursor:pointer;color:#4c5054;transition:.16s ease}
+.rup-lab-toolbar button:hover{background:#f5f5f4;color:#111}
+.rup-lab-toolbar button.active{background:#fff1f1;color:var(--lab-red)}
+.rup-lab-toolbar button.active::before{content:"";position:absolute;left:-8px;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--lab-red)}
+.rup-lab-toolbar svg{width:25px;height:25px;stroke-width:1.8}
+.rup-lab-toolbar span{font-size:10px;line-height:1.1;font-weight:750}
+.rup-lab-panel{width:360px;background:#fff;border-right:1px solid var(--lab-line);overflow:hidden;transition:.18s ease;z-index:25}
+.rup-lab.panel-closed .rup-lab-panel{width:0;border-right:0}
+.rup-lab-panel-head{height:76px;border-bottom:1px solid var(--lab-line);display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:10px;padding:0 14px}
+.rup-lab-panel-head>div{min-width:0}
+.rup-lab-panel-head span{display:block;font-size:9px;letter-spacing:.12em;color:var(--lab-red);font-weight:900}
+.rup-lab-panel-head strong{display:block;font-size:19px;line-height:1.2;margin-top:2px}
+.rup-panel-back,.rup-panel-close{border:0;background:#f6f6f5;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.rup-panel-close{display:none}
+.rup-panel-back svg,.rup-panel-close svg{width:17px;height:17px}
+.rup-lab-panel-body{height:calc(100% - 76px);overflow:auto;padding:22px}
+.rup-kicker{font-size:10px;letter-spacing:.12em;font-weight:900;color:var(--lab-red)}
+.rup-welcome-panel h2,.rup-tool-copy h3{font-size:28px;line-height:1.02;margin:7px 0 10px;letter-spacing:-.03em}
+.rup-welcome-panel>p,.rup-tool-copy p{margin:0;color:#686d72;font-size:13px;line-height:1.5}
+.rup-welcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.rup-welcome-grid button,.rup-art-card{border:1px solid #dedede;background:#fff;border-radius:14px;padding:16px;min-height:140px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;text-align:left;cursor:pointer;transition:.18s ease}
+.rup-welcome-grid button:hover,.rup-art-card:hover{border-color:#b7b7b7;box-shadow:0 8px 24px rgba(0,0,0,.06);transform:translateY(-1px)}
+.rup-welcome-grid svg,.rup-art-card svg{width:30px;height:30px;color:var(--lab-red);margin-bottom:auto}
+.rup-welcome-grid strong,.rup-art-card strong{font-size:13px;margin-top:16px}
+.rup-welcome-grid span,.rup-art-card span{font-size:10px;color:#777;margin-top:4px;line-height:1.35}
+.rup-tool-section{display:grid;gap:16px}
+.rup-product-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rup-product-grid button{border:1px solid #ddd;background:#fff;border-radius:12px;padding:8px;text-align:left;cursor:pointer;display:grid;gap:4px}
+.rup-product-grid button.selected{border-color:var(--lab-red);box-shadow:0 0 0 2px rgba(210,13,20,.08)}
+.rup-product-grid img{width:100%;height:92px;object-fit:contain;background:#f5f5f3;border-radius:8px}
+.rup-product-grid strong{font-size:11px}
+.rup-product-grid span{font-size:9px;color:#777}
+.rup-field-label{display:grid;gap:6px}
+.rup-field-label>span,.rup-inline-fields span,.rup-full-colour>span{font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;color:#555}
+.rup-field-label input[type=text],.rup-field-label input:not([type]),.rup-field-label select,.rup-full-colour input[type=text],.rup-full-colour input:not([type]){width:100%;height:44px;border:1px solid #d6d6d6;border-radius:9px;padding:0 11px;background:#fff;font-size:14px}
+.rup-dropzone{min-height:230px;border:1.5px dashed #bdbdbd;border-radius:14px;display:grid;place-items:center;align-content:center;gap:5px;text-align:center;padding:22px;cursor:pointer;background:#fafafa;transition:.18s ease}
+.rup-dropzone:hover{background:#fff7f7;border-color:var(--lab-red)}
+.rup-dropzone>svg{width:42px;height:42px;color:var(--lab-red);margin-bottom:8px}
+.rup-dropzone strong{font-size:15px}
+.rup-dropzone span{font-size:12px;color:#666}
+.rup-dropzone small{font-size:10px;color:#999;margin-top:4px}
+.rup-dropzone input{display:none}
+.rup-primary-action,.rup-secondary-action{width:100%;min-height:46px;border-radius:9px;font-weight:850;cursor:pointer}
+.rup-primary-action{border:0;background:var(--lab-red);color:#fff}
+.rup-secondary-action{border:1px solid #cfcfcf;background:#fff;color:#111}
+.rup-art-card{width:100%}
+.rup-colour-swatches{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rup-colour-swatches button{border:1px solid #dedede;background:#fff;border-radius:10px;padding:8px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.rup-colour-swatches button.selected{border-color:var(--lab-red)}
+.rup-colour-swatches button>span{width:28px;height:28px;border-radius:50%;border:1px solid #ccc}
+.rup-colour-swatches strong{font-size:11px}
+.rup-full-colour{display:grid;gap:8px}
+.rup-full-colour>div{display:grid;grid-template-columns:52px 1fr;gap:8px}
+.rup-full-colour input[type=color]{width:52px;height:44px;border:1px solid #d6d6d6;border-radius:9px;padding:2px;background:#fff}
+.rup-inline-fields{display:grid;grid-template-columns:90px 1fr;gap:10px}
+.rup-inline-fields label{display:grid;gap:6px}
+.rup-inline-fields input[type=color]{width:100%;height:42px;border:1px solid #ddd;border-radius:9px;background:#fff;padding:2px}
+.rup-inline-fields input[type=range],.rup-field-label input[type=range]{width:100%;accent-color:var(--lab-red)}
+.rup-format-row{display:flex;gap:6px}
+.rup-format-row button{width:40px;height:38px;border:1px solid #ddd;background:#fff;border-radius:8px;display:grid;place-items:center}
+.rup-format-row button.active{background:#111;color:#fff;border-color:#111}
+.rup-format-row svg{width:16px;height:16px}
+.rup-layer-list{display:grid;gap:7px}
+.rup-layer-list button{border:1px solid #ddd;background:#fff;border-radius:10px;padding:10px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto auto;text-align:left;column-gap:8px;cursor:pointer}
+.rup-layer-list button.selected{border-color:var(--lab-red);background:#fff8f8}
+.rup-layer-list button>span{grid-row:1/3;width:28px;height:28px;border-radius:7px;background:#f0f0ef;display:grid;place-items:center;font-size:10px;font-weight:850}
+.rup-layer-list strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rup-layer-list small{font-size:9px;color:#777}
+.rup-empty-state{padding:24px;border:1px dashed #ccc;border-radius:10px;text-align:center;font-size:11px;color:#888}
+.rup-layer-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rup-layer-actions button{min-height:42px;border:1px solid #ddd;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:800}
+.rup-layer-actions .danger{color:#c71318}
+.rup-layer-actions svg{width:14px;height:14px}
+.rup-lab-stage-shell{min-width:0;display:grid;grid-template-rows:76px minmax(0,1fr) 84px;background:#efefed;overflow:hidden}
+.rup-lab-stage-top{background:#fff;border-bottom:1px solid var(--lab-line);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:0 18px}
+.rup-side-tabs{display:flex;border:1px solid #ddd;border-radius:10px;padding:3px;background:#f7f7f6}
+.rup-side-tabs button{border:0;background:transparent;padding:9px 17px;border-radius:7px;font-size:11px;font-weight:850}
+.rup-side-tabs button.active{background:#111;color:#fff}
+.rup-stage-product-label{display:flex;align-items:center;justify-content:center;gap:8px;color:#555;min-width:0}
+.rup-stage-product-label svg{width:17px;height:17px}
+.rup-stage-product-label span{display:flex;gap:8px;align-items:baseline;font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rup-stage-product-label strong{font-size:12px;color:#111}
+.rup-stage-actions{display:flex;align-items:center;gap:8px}
+.rup-view-toggle{display:flex;gap:4px}
+.rup-view-toggle button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;font-size:10px;font-weight:850}
+.rup-view-toggle button.active{background:#111;color:#fff;border-color:#111}
+.rup-view-toggle svg{width:13px;height:13px}
+.rup-complete-button{border:0;border-radius:9px;background:var(--lab-red);color:#fff;padding:12px 16px;font-size:11px;font-weight:900;white-space:nowrap;cursor:pointer}
+.rup-lab-canvas{position:relative;min-height:0;margin:18px;border-radius:16px;background:radial-gradient(circle at 50% 35%,#fff 0,#f8f8f6 54%,#e9e9e6 100%);border:1px solid #dededb;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.05)}
+.rup-lab-canvas .premium-garment-viewer,.rup-lab-canvas .cylindrical-viewer{position:absolute;inset:0}
+.rup-lab-canvas .flat-product-viewer{position:absolute;inset:0}
+.rup-lab-bottom{height:84px;background:#fff;border-top:1px solid var(--lab-line);display:flex;align-items:center;justify-content:space-between;padding:10px 18px;gap:20px}
+.rup-bottom-product{display:flex;align-items:center;gap:10px;min-width:0}
+.rup-bottom-product img{width:58px;height:58px;object-fit:contain;background:#f5f5f3;border-radius:9px}
+.rup-bottom-product div{display:grid;gap:2px}
+.rup-bottom-product strong{font-size:12px}
+.rup-bottom-product span{font-size:9px;color:#777}
+.rup-bottom-controls{display:flex;align-items:center;gap:22px}
+.rup-bottom-controls>label{display:flex;align-items:center;gap:8px}
+.rup-bottom-controls>label>span,.rup-price-block span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#777;font-weight:850}
+.rup-qty{display:flex;border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.rup-qty button{width:32px;height:34px;border:0;background:#f7f7f6;font-size:17px}
+.rup-qty input{width:38px;border:0;text-align:center;font-weight:800}
+.rup-price-block{display:grid;gap:2px;text-align:right}
+.rup-price-block strong{font-size:15px}
+.rup-lab .design-edit-overlay{z-index:12}
+.rup-lab .apparel-edit-zone{left:31%;top:25%;width:38%;height:52%}
+.rup-lab .cylinder-edit-zone{left:23%;top:22%;width:54%;height:58%}
+.create-app-page{height:100dvh;overflow:hidden;background:#f4f4f2}
+.create-app-page .site2-header{position:relative;z-index:100}
+.create-app-page .footer2{display:none}
+@media(max-width:1100px){
+  .rup-lab{grid-template-columns:78px 320px minmax(0,1fr)}
+  .rup-lab-panel{width:320px}
+  .rup-lab.panel-closed{grid-template-columns:78px 0 minmax(0,1fr)}
+  .rup-stage-product-label{display:none}
+  .rup-lab-stage-top{grid-template-columns:auto 1fr}
+  .rup-stage-actions{justify-self:end}
+}
+@media(max-width:760px){
+  .create-app-page{height:auto;min-height:100dvh;overflow:visible}
+  .rup-lab,.rup-lab.panel-closed{height:calc(100dvh - 72px);min-height:620px;display:block;position:relative;overflow:hidden}
+  .rup-lab-toolbar{position:absolute;left:0;right:0;bottom:0;height:74px;border-right:0;border-top:1px solid var(--lab-line);padding:5px 8px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;z-index:120}
+  .rup-lab-toolbar button{min-height:62px;padding:5px 2px;border-radius:9px}
+  .rup-lab-toolbar button.active::before{left:10px;right:10px;top:-5px;bottom:auto;width:auto;height:3px;border-radius:0 0 3px 3px}
+  .rup-lab-toolbar svg{width:22px;height:22px}
+  .rup-lab-toolbar span{font-size:9px}
+  .rup-lab-panel{position:absolute;left:0;right:0;bottom:74px;width:auto!important;height:min(68vh,620px);border:1px solid #ddd;border-radius:18px 18px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.14);z-index:110;transform:translateY(0);transition:.2s ease}
+  .rup-lab.panel-closed .rup-lab-panel{transform:translateY(calc(100% + 8px))}
+  .rup-panel-back{display:none}
+  .rup-panel-close{display:grid}
+  .rup-lab-panel-head{height:64px}
+  .rup-lab-panel-body{height:calc(100% - 64px);padding:18px}
+  .rup-lab-stage-shell{position:absolute;inset:0 0 74px 0;grid-template-rows:64px minmax(0,1fr) 72px}
+  .rup-lab-stage-top{padding:0 10px;gap:8px}
+  .rup-side-tabs button{padding:8px 12px}
+  .rup-view-toggle button{padding:8px}
+  .rup-complete-button{padding:10px 12px}
+  .rup-lab-canvas{margin:10px;border-radius:12px}
+  .rup-lab-bottom{height:72px;padding:7px 10px}
+  .rup-bottom-product img{width:48px;height:48px}
+  .rup-bottom-controls{gap:10px}
+  .rup-price-block strong{font-size:13px}
+  .rup-lab .apparel-edit-zone{left:24%;top:25%;width:52%;height:53%}
+  .rup-lab .cylinder-edit-zone{left:15%;top:22%;width:70%;height:58%}
+  .rup-welcome-panel h2,.rup-tool-copy h3{font-size:25px}
+}
+@media(max-width:430px){
+  .rup-lab-toolbar span{font-size:8px}
+  .rup-view-toggle{display:none}
+  .rup-bottom-product span{display:none}
+  .rup-bottom-controls>label>span{display:none}
+  .rup-price-block span{display:none}
+}
