@@ -213,22 +213,30 @@ export function DesignerApp({
     if (file) handleUpload(file);
   }
 
-  function duplicateSelected() {
-    if (!selected) return;
+  function duplicateLayerById(id: string) {
+    const source = layers.find((layer) => layer.id === id);
+    if (!source) return;
     const copy = {
-      ...selected,
+      ...source,
       id: newId(),
-      x: Math.min(95, selected.x + 4),
-      y: Math.min(95, selected.y + 4),
+      x: Math.min(95, source.x + 4),
+      y: Math.min(95, source.y + 4),
     } as DesignLayer;
     updateLayers((ls) => [...ls, copy]);
     setSelectedId(copy.id);
   }
 
+  function duplicateSelected() {
+    if (selected) duplicateLayerById(selected.id);
+  }
+
+  function deleteLayerById(id: string) {
+    updateLayers((ls) => ls.filter((l) => l.id !== id));
+    if (selectedId === id) setSelectedId(null);
+  }
+
   function deleteSelected() {
-    if (!selected) return;
-    updateLayers((ls) => ls.filter((l) => l.id !== selected.id));
-    setSelectedId(null);
+    if (selected) deleteLayerById(selected.id);
   }
 
   function rotateSelected() {
@@ -312,6 +320,9 @@ export function DesignerApp({
                   if (id) setActiveTool("layers");
                 }}
                 onChange={updateLayer}
+                onDelete={deleteLayerById}
+                onDuplicate={duplicateLayerById}
+                renderMode="controls"
               />
             </div>
           )}
@@ -338,6 +349,9 @@ export function DesignerApp({
                   if (id) setActiveTool("layers");
                 }}
                 onChange={updateLayer}
+                onDelete={deleteLayerById}
+                onDuplicate={duplicateLayerById}
+                renderMode="controls"
               />
             </div>
           )}
@@ -356,6 +370,8 @@ export function DesignerApp({
             if (id) setActiveTool("layers");
           }}
           onChange={updateLayer}
+          onDelete={deleteLayerById}
+          onDuplicate={duplicateLayerById}
         />
       )}
     </>
