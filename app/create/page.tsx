@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { CORE_CATALOG } from "@/lib/catalog";
 import { DesignerApp } from "./DesignerApp";
 
@@ -67,20 +66,11 @@ export default async function CreatePage({
   const selected = products.find((p) => p.slug === sp.product) || products[0];
 
   return (
-    <main className="sf">
+    <main className="sf create-app-page">
       <SiteHeader />
-      <section className="content-hero content-hero-compact create-intro-v3">
-        <span>CREATE STUDIO</span>
-        <h1>Make it yours.</h1>
-        <p>
-          Select any product, add artwork or text, preview it on the item, then order directly
-          or continue into a production quote for custom jobs.
-        </p>
-      </section>
       <section className="designer-shell">
         <DesignerApp products={products} initialProductId={selected.id} />
       </section>
-      <SiteFooter />
     </main>
   );
 }
