@@ -441,3 +441,84 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 }
 
 .catalog-source-link{display:inline-flex;margin-top:14px;font-size:13px;font-weight:800;color:#d20d14;text-decoration:underline;text-underline-offset:3px}
+
+
+/* ==========================================================================
+   CREATE STUDIO V3 — selectable catalog + fabric-aware 3D preview
+   ========================================================================== */
+.create-intro-v3{padding-bottom:24px}
+.designer-v3{align-items:start}
+.product-visual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:4px}
+.product-visual-grid button{border:1px solid #e1e1e1;background:#fff;border-radius:10px;padding:7px;display:grid;grid-template-rows:72px auto;gap:6px;cursor:pointer;text-align:left;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.product-visual-grid button:hover{transform:translateY(-1px);border-color:#bbb}
+.product-visual-grid button.selected{border-color:#d20d14;box-shadow:0 0 0 2px rgba(210,13,20,.08)}
+.product-visual-grid img{width:100%;height:72px;object-fit:contain;border-radius:7px;background:#f6f6f5}
+.product-visual-grid span{font-size:9px;line-height:1.2;font-weight:800;color:#222}
+.designer-range{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:10px;font-size:10px;font-weight:800;color:#555}
+.designer-range input{accent-color:#d20d14}
+.designer-error{color:#d20d14;font-size:11px;margin:0}
+.designer-canvas-topline{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.designer-3d-hint{font-size:10px;font-weight:700;color:#858585}
+.designer-shell .designer-canvas{position:relative;overflow:hidden;perspective:1100px;background:radial-gradient(circle at 50% 38%,#fff 0,#f5f5f3 46%,#ececea 100%)}
+.garment-stage{position:relative;width:min(88%,650px);height:min(88%,580px);display:grid;place-items:center;transform-style:preserve-3d;will-change:transform}
+.garment-stage>.mockup{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;filter:drop-shadow(0 28px 28px rgba(0,0,0,.12));transform:translateZ(0)}
+.garment-stage .print-area{position:absolute;overflow:hidden;transform:translateZ(18px);border:1px dashed rgba(210,13,20,.85);pointer-events:auto;isolation:isolate}
+.garment-stage .print-area::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:20;background:linear-gradient(112deg,rgba(255,255,255,.16),transparent 28%,rgba(0,0,0,.08) 56%,transparent 78%);mix-blend-mode:overlay;opacity:.55}
+.fabric-light{position:absolute;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(93deg,rgba(255,255,255,.045) 0 1px,rgba(0,0,0,.03) 1px 2px);mix-blend-mode:overlay;opacity:.6}
+.garment-stage .design-layer{z-index:5;mix-blend-mode:multiply;filter:contrast(.93) saturate(.93);opacity:.94}
+.garment-stage .design-layer.selected{outline:1.5px solid #d20d14;outline-offset:3px;mix-blend-mode:normal}
+.garment-stage .design-layer-text{text-shadow:0 .35px .7px rgba(0,0,0,.14);letter-spacing:-.01em;display:block}
+.garment-stage .design-layer img{display:block;filter:contrast(.96)}
+/* product-aware printable surfaces */
+.print-area-standard-t-shirt{width:31%!important;height:40%!important;top:29%!important;left:34.5%!important}
+.print-area-polo-shirt{width:27%!important;height:33%!important;top:30%!important;left:36.5%!important}
+.print-area-pullover-hoodie{width:31%!important;height:31%!important;top:35%!important;left:34.5%!important}
+.print-area-branded-bottle{width:24%!important;height:43%!important;top:29%!important;left:38%!important;border-radius:18px}
+.print-area-custom-signage,.print-area-banners-large-format{width:56%!important;height:48%!important;top:27%!important;left:22%!important}
+.print-area-vehicle-graphics{width:48%!important;height:31%!important;top:38%!important;left:27%!important}
+.print-side-back{opacity:.9}
+.summary-product-preview{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;padding:10px;border-radius:10px;background:#f7f7f6;border:1px solid #ececec}
+.summary-product-preview img{width:72px;height:72px;object-fit:contain}
+.summary-product-preview small{display:block;font-size:9px;color:#777;text-transform:uppercase;letter-spacing:.08em}
+.summary-product-preview strong{display:block;font-size:14px;margin-top:3px}
+.summary-image-picker{display:flex;gap:8px;overflow:auto}
+.summary-image-picker button{width:54px;height:54px;border:1px solid #ddd;border-radius:8px;background:#fff;padding:3px}
+.summary-image-picker button.selected{border-color:#d20d14}
+.summary-image-picker img{width:100%;height:100%;object-fit:contain}
+.quote-required-note{font-size:12px;line-height:1.5;color:#555;background:#f5f5f4;border-radius:9px;padding:12px}
+.designer-actions{justify-content:center!important}
+.site2-brand img,.footer2-brand img{object-fit:contain;background:#fff;border-radius:0}
+@media(max-width:1100px){
+  .product-visual-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .designer-v3 .designer-panel{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .product-visual-grid{display:flex;overflow-x:auto;padding-bottom:4px}
+  .product-visual-grid button{flex:0 0 112px;grid-template-rows:76px auto}
+  .designer-canvas-topline{align-items:flex-start}
+  .designer-3d-hint{max-width:130px;text-align:right}
+  .garment-stage{width:96%;height:88%}
+  .designer-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .designer-actions button{justify-content:center}
+}
+
+
+/* True 3D apparel configurator */
+.designer-canvas-true3d{background:
+  radial-gradient(circle at 50% 24%,rgba(255,255,255,.12),transparent 26%),
+  linear-gradient(180deg,#191a1d 0%,#0d0e10 100%)!important;
+  min-height:600px!important;
+  overflow:hidden;
+}
+.three-shirt-viewer{position:absolute;inset:0;cursor:grab;touch-action:none}
+.three-shirt-viewer:active{cursor:grabbing}
+.three-shirt-viewer canvas{display:block;width:100%!important;height:100%!important}
+.smart-color-note{display:flex;align-items:center;gap:7px;font-size:10px;color:#666;margin-top:6px}
+.smart-color-note strong{color:#222}
+.smart-color-chip{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #bbb;box-shadow:0 0 0 2px #fff}
+.designer-position-grid{display:grid;gap:7px;padding:10px;border:1px solid #ececec;border-radius:9px;background:#fafafa}
+.designer-canvas-true3d+.designer-actions{border-top:0}
+@media(max-width:760px){
+  .designer-canvas-true3d{min-height:480px!important}
+  .designer-3d-hint{color:#777}
+}
