@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 type GoogleFont = {
   family: string;
@@ -12,7 +12,7 @@ type GoogleFont = {
 export async function GET() {
   try {
     const res = await fetch("https://fonts.google.com/metadata/fonts", {
-      next: { revalidate: 86400 },
+      cache: "no-store",
       headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!res.ok) throw new Error("Google Fonts metadata unavailable");
