@@ -1,7 +1,7 @@
 export type TextLayer = {
   id: string;
   type: "text";
-  x: number; // percent within print area, 0-100
+  x: number;
   y: number;
   rotation: number;
   content: string;
@@ -11,6 +11,7 @@ export type TextLayer = {
   align: "left" | "center" | "right";
   color: string;
   fontSize: number;
+  widthPct?: number;
 };
 
 export type ImageLayer = {
@@ -30,10 +31,13 @@ export type DesignSides = {
   back: DesignLayer[];
 };
 
-export const FONT_OPTIONS = [
+export const STARTER_FONT_OPTIONS = [
   "Montserrat",
-  "Arial",
-  "Georgia",
-  "Impact",
-  "Courier New",
+  "Oswald",
+  "Roboto",
+  "Poppins",
+  "Bebas Neue",
+  "Archivo Black",
+  "Playfair Display",
+  "Lobster",
 ];
