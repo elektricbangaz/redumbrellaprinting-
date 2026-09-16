@@ -6,13 +6,14 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import type { DesignLayer, DesignSides } from "@/lib/designer-types";
-import { GARMENT_MODELS } from "@/lib/garment-models";
+import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 
 type Props = {
   productSlug: string;
   colorName: string;
   side: "front" | "back";
   design: DesignSides;
+  printZoneId?: PrintZoneId;
   className?: string;
   interactive?: boolean;
   onPreviewChange?: (dataUrl: string) => void;
@@ -99,6 +100,7 @@ export function PremiumGarmentViewer({
   colorName,
   side,
   design,
+  printZoneId,
   className,
   interactive = true,
   onPreviewChange,
@@ -313,9 +315,14 @@ export function PremiumGarmentViewer({
       const liveBox = new THREE.Box3().setFromObject(root);
       const size = liveBox.getSize(new THREE.Vector3());
       const center = liveBox.getCenter(new THREE.Vector3());
+      const zone =
+        config?.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
+        config?.printZones?.find((candidate) => candidate.side === side);
+      const projectionScale = zone?.projectionScale || config?.printScale || [0.36, 0.42];
+      const projectionOffset = zone?.projectionOffset || [0, -0.07];
       const pos = new THREE.Vector3(
-        center.x,
-        center.y - size.y * 0.07,
+        center.x + size.x * projectionOffset[0],
+        center.y + size.y * projectionOffset[1],
         side === "front" ? liveBox.max.z + 0.012 : liveBox.min.z - 0.012
       );
       const orient = new THREE.Euler(0, side === "front" ? 0 : Math.PI, 0);
@@ -323,8 +330,8 @@ export function PremiumGarmentViewer({
         const geo = new DecalGeometry(
           mesh, pos, orient,
           new THREE.Vector3(
-            size.x * (config?.printScale?.[0] ?? 0.36),
-            size.y * (config?.printScale?.[1] ?? 0.42),
+            size.x * projectionScale[0],
+            size.y * projectionScale[1],
             Math.max(size.z * 0.14, 0.028)
           )
         );
@@ -353,7 +360,7 @@ export function PremiumGarmentViewer({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [design, side, state, config?.printScale]);
+  }, [design, side, state, config?.printScale, config?.printZones, printZoneId]);
 
   return (
     <div className={className || "premium-garment-viewer"}>
