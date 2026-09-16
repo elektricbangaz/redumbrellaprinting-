@@ -13,6 +13,7 @@ const schema = z.object({
   size: z.string(),
   quantity: z.number().int().min(1).max(1000),
   design: z.unknown(),
+  printZoneId: z.string().optional(),
   frontExport: z.string().optional(),
   backExport: z.string().optional(),
   previewImage: z.string().optional(),
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
           color: input.color,
           size: input.size,
           quantity: input.quantity,
+          printZoneId: input.printZoneId ?? null,
         },
         design: persistedDesign,
         exports: {
@@ -190,6 +192,7 @@ export async function POST(req: Request) {
           color: input.color,
           size: input.size,
           quantity: input.quantity,
+          printZoneId: input.printZoneId ?? null,
           exports: {
             front: front?.secure_url ?? null,
             back: back?.secure_url ?? null,
