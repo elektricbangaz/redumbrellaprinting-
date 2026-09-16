@@ -279,9 +279,10 @@ export function PremiumGarmentViewer({
 
   useEffect(() => {
     const scene = sceneRef.current;
+    const root = garmentRef.current;
     const mesh = meshRef.current;
     const box = boxRef.current;
-    if (!scene || !mesh || !box || state !== "ready") return;
+    if (!scene || !root || !mesh || !box || state !== "ready") return;
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       if (cancelled) return;
@@ -321,7 +322,11 @@ export function PremiumGarmentViewer({
       try {
         const geo = new DecalGeometry(
           mesh, pos, orient,
-          new THREE.Vector3(size.x * (config?.printScale?.[0] ?? 0.36), size.y * (config?.printScale?.[1] ?? 0.42), Math.max(size.z * 0.85, 0.03))
+          new THREE.Vector3(
+            size.x * (config?.printScale?.[0] ?? 0.36),
+            size.y * (config?.printScale?.[1] ?? 0.42),
+            Math.max(size.z * 0.14, 0.028)
+          )
         );
         const mat = new THREE.MeshBasicMaterial({
           map: texture,
