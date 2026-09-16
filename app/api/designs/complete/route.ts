@@ -33,6 +33,73 @@ export async function POST(req: Request) {
   const source = CORE_CATALOG.find((p) => p.slug === input.productSlug);
 
   try {
+    if (!process.env.DATABASE_URL) {
+      const stamp = Date.now().toString();
+      const safeEmail = input.customer.email.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "customer";
+      const folder = `red-umbrella/designs/${safeEmail}/${input.productSlug}`;
+
+      const persistedDesign = structuredClone(input.design as Record<string, unknown>) as any;
+      for (const sideName of ["front", "back"]) {
+        const sideLayers = Array.isArray(persistedDesign?.[sideName]) ? persistedDesign[sideName] : [];
+        for (let index = 0; index < sideLayers.length; index += 1) {
+          const layer = sideLayers[index];
+          if (layer?.type !== "image" || typeof layer?.src !== "string" || !layer.src.startsWith("data:")) continue;
+          const uploaded = await uploadDataUrl({
+            dataUrl: layer.src,
+            folder: `${folder}/artwork`,
+            publicId: `${stamp}-${sideName}-layer-${index + 1}`,
+          });
+          layer.src = uploaded.secure_url;
+          layer.cloudinaryPublicId = uploaded.public_id;
+        }
+      }
+
+      const [front, back, preview] = await Promise.all([
+        input.frontExport ? uploadDataUrl({ dataUrl: input.frontExport, folder, publicId: `${stamp}-front` }) : Promise.resolve(null),
+        input.backExport ? uploadDataUrl({ dataUrl: input.backExport, folder, publicId: `${stamp}-back` }) : Promise.resolve(null),
+        input.previewImage ? uploadDataUrl({ dataUrl: input.previewImage, folder, publicId: `${stamp}-mockup` }) : Promise.resolve(null),
+      ]);
+
+      const metadataPayload = {
+        reference: `RUP-D-${stamp.slice(-8)}`,
+        submittedAt: new Date().toISOString(),
+        customer: input.customer,
+        product: {
+          id: input.productId,
+          slug: input.productSlug,
+          name: input.productName,
+          color: input.color,
+          size: input.size,
+          quantity: input.quantity,
+        },
+        design: persistedDesign,
+        exports: {
+          front: front?.secure_url ?? null,
+          back: back?.secure_url ?? null,
+          preview: preview?.secure_url ?? null,
+        },
+      };
+      const metadataDataUrl = `data:application/json;base64,${Buffer.from(JSON.stringify(metadataPayload)).toString("base64")}`;
+      const metadata = await uploadDataUrl({
+        dataUrl: metadataDataUrl,
+        folder,
+        publicId: `${stamp}-metadata`,
+        resourceType: "raw",
+      });
+
+      return NextResponse.json({
+        ok: true,
+        designId: null,
+        reference: metadataPayload.reference,
+        assets: {
+          front: front?.secure_url ?? null,
+          back: back?.secure_url ?? null,
+          preview: preview?.secure_url ?? null,
+          metadata: metadata.secure_url,
+        },
+      });
+    }
+
     const product = await prisma.product.upsert({
       where: { slug: input.productSlug },
       update: source ? {
@@ -143,7 +210,10 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to complete design.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[designs/complete] submission failed", error);
+    return NextResponse.json(
+      { error: "We couldn’t submit your design just now. Please try again in a moment." },
+      { status: 500 }
+    );
   }
 }
