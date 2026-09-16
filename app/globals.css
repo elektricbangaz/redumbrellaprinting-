@@ -1086,3 +1086,6 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-stage-actions{max-width:46vw!important}
   .rup-complete-button{max-width:42vw!important;font-size:12px!important}
 }
+
+.live-layer.controls-only>img,
+.live-layer.controls-only>.live-text-layer{visibility:hidden!important}
