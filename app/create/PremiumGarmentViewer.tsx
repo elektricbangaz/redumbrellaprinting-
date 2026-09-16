@@ -307,12 +307,15 @@ export function PremiumGarmentViewer({
       texture.needsUpdate = true;
       textureRef.current = texture;
 
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
+      root.updateMatrixWorld(true);
+      mesh.updateMatrixWorld(true);
+      const liveBox = new THREE.Box3().setFromObject(root);
+      const size = liveBox.getSize(new THREE.Vector3());
+      const center = liveBox.getCenter(new THREE.Vector3());
       const pos = new THREE.Vector3(
         center.x,
         center.y - size.y * 0.07,
-        side === "front" ? box.max.z + 0.006 : box.min.z - 0.006
+        side === "front" ? liveBox.max.z + 0.012 : liveBox.min.z - 0.012
       );
       const orient = new THREE.Euler(0, side === "front" ? 0 : Math.PI, 0);
       try {
@@ -320,10 +323,17 @@ export function PremiumGarmentViewer({
           mesh, pos, orient,
           new THREE.Vector3(size.x * (config?.printScale?.[0] ?? 0.36), size.y * (config?.printScale?.[1] ?? 0.42), Math.max(size.z * 0.85, 0.03))
         );
-        const mat = new THREE.MeshPhysicalMaterial({
-          map: texture, transparent: true, depthWrite: false,
-          polygonOffset: true, polygonOffsetFactor: -4,
-          roughness: 0.86, metalness: 0, clearcoat: 0,
+        const mat = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          alphaTest: 0.02,
+          depthWrite: false,
+          depthTest: true,
+          polygonOffset: true,
+          polygonOffsetFactor: -8,
+          polygonOffsetUnits: -8,
+          toneMapped: false,
+          side: THREE.DoubleSide,
         });
         const decal = new THREE.Mesh(geo, mat);
         decalRef.current = decal;
