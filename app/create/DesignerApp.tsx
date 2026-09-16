@@ -343,7 +343,7 @@ export function DesignerApp({
           />
           {editMode && (
             <div
-              className="design-edit-overlay apparel-edit-zone"
+              className="design-edit-overlay apparel-zone-dynamic"
               style={activePrintZone ? {
                 left: `${activePrintZone.x}%`,
                 top: `${activePrintZone.y}%`,
