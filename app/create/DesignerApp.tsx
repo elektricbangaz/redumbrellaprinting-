@@ -33,6 +33,7 @@ import { DesignOverlay } from "./DesignOverlay";
 import { FontPicker } from "./FontPicker";
 import { CompleteDesignModal } from "./CompleteDesignModal";
 import { dimensionsFromLabel, renderFlatMockup, renderLayersToDataUrl } from "@/lib/design-export";
+import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 
 type ProductOption = {
   id: string;
@@ -85,6 +86,7 @@ export function DesignerApp({
   const [reference, setReference] = useState("");
   const [activeTool, setActiveTool] = useState<ToolId>("start");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [printZoneId, setPrintZoneId] = useState<PrintZoneId>("full-front");
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 761px)");
@@ -96,6 +98,12 @@ export function DesignerApp({
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
+  const garmentConfig = GARMENT_MODELS[product.slug];
+  const availablePrintZones = garmentConfig?.printZones?.filter((zone) => zone.side === side) || [];
+  const activePrintZone =
+    availablePrintZones.find((zone) => zone.id === printZoneId) ||
+    availablePrintZones[0] ||
+    null;
   const previewMode =
     product.previewMode ||
     (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" : "flat");
@@ -119,6 +127,8 @@ export function DesignerApp({
 
   function changeSide(nextSide: "front" | "back") {
     setSide(nextSide);
+    const zones = GARMENT_MODELS[product.slug]?.printZones?.filter((zone) => zone.side === nextSide) || [];
+    if (zones[0]) setPrintZoneId(zones[0].id);
     setSelectedId(null);
     setEditMode(true);
     setActiveTool("start");
@@ -133,6 +143,9 @@ export function DesignerApp({
     setColor(nextColor);
     setCustomColor(normalizeColor(nextColor));
     setSize(next.sizes[0] || "Standard");
+    const zones = GARMENT_MODELS[next.slug]?.printZones?.filter((zone) => zone.side === "front") || [];
+    setSide("front");
+    if (zones[0]) setPrintZoneId(zones[0].id);
     setSelectedId(null);
     setPreviewImage("");
     setEditMode(true);
@@ -297,6 +310,7 @@ export function DesignerApp({
           size,
           quantity,
           design,
+          printZoneId: activePrintZone?.id,
           frontExport,
           backExport,
           previewImage: finalPreview || undefined,
@@ -322,12 +336,21 @@ export function DesignerApp({
             colorName={customColor}
             side={side}
             design={design}
+            printZoneId={activePrintZone?.id}
             interactive={!editMode}
             onPreviewChange={setPreviewImage}
             className="premium-garment-viewer"
           />
           {editMode && (
-            <div className="design-edit-overlay apparel-edit-zone">
+            <div
+              className="design-edit-overlay apparel-edit-zone"
+              style={activePrintZone ? {
+                left: `${activePrintZone.x}%`,
+                top: `${activePrintZone.y}%`,
+                width: `${activePrintZone.width}%`,
+                height: `${activePrintZone.height}%`,
+              } : undefined}
+            >
               <DesignOverlay
                 layers={layers}
                 selectedId={selectedId}
@@ -483,6 +506,23 @@ export function DesignerApp({
                     {product.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </label>
+                {previewMode === "apparel3d" && availablePrintZones.length > 0 && (
+                  <label className="rup-field-label">
+                    <span>Print placement</span>
+                    <select
+                      value={activePrintZone?.id || ""}
+                      onChange={(e) => {
+                        setPrintZoneId(e.target.value as PrintZoneId);
+                        setSelectedId(null);
+                      }}
+                    >
+                      {availablePrintZones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>{zone.label}</option>
+                      ))}
+                    </select>
+                    <small className="rup-field-help">Artwork stays inside the selected printable area.</small>
+                  </label>
+                )}
               </div>
             )}
 
