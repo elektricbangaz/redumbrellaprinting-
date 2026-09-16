@@ -665,10 +665,15 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 .rup-layer-actions .danger{color:#c71318}
 .rup-layer-actions svg{width:14px;height:14px}
 .rup-lab-stage-shell{min-width:0;display:grid;grid-template-rows:76px minmax(0,1fr) 84px;background:#efefed;overflow:hidden}
-.rup-lab-stage-top{background:#fff;border-bottom:1px solid var(--lab-line);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:0 18px}
+.rup-lab-stage-top{background:#fff;border-bottom:1px solid var(--lab-line);display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:18px;padding:0 18px}
 .rup-side-tabs{display:flex;border:1px solid #ddd;border-radius:10px;padding:3px;background:#f7f7f6}
 .rup-side-tabs button{border:0;background:transparent;padding:9px 17px;border-radius:7px;font-size:11px;font-weight:850}
 .rup-side-tabs button.active{background:#111;color:#fff}
+.rup-side-actions{display:flex;align-items:center;gap:6px}
+.rup-side-actions>span{font-size:10px;color:#777;text-transform:capitalize;margin-right:2px}
+.rup-side-actions button{border:1px solid #ddd;background:#fff;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:850}
+.rup-side-actions button:hover{border-color:var(--lab-red);color:var(--lab-red)}
+.rup-side-actions svg{width:13px;height:13px}
 .rup-stage-product-label{display:flex;align-items:center;justify-content:center;gap:8px;color:#555;min-width:0}
 .rup-stage-product-label svg{width:17px;height:17px}
 .rup-stage-product-label span{display:flex;gap:8px;align-items:baseline;font-size:10px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -707,7 +712,7 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-lab-panel{width:320px}
   .rup-lab.panel-closed{grid-template-columns:78px 0 minmax(0,1fr)}
   .rup-stage-product-label{display:none}
-  .rup-lab-stage-top{grid-template-columns:auto 1fr}
+  .rup-lab-stage-top{grid-template-columns:auto auto 1fr}
   .rup-stage-actions{justify-self:end}
 }
 @media(max-width:760px){
@@ -725,8 +730,12 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-lab-panel-head{height:64px}
   .rup-lab-panel-body{height:calc(100% - 64px);padding:18px}
   .rup-lab-stage-shell{position:absolute;inset:0 0 74px 0;grid-template-rows:64px minmax(0,1fr) 72px}
-  .rup-lab-stage-top{padding:0 10px;gap:8px}
+  .rup-lab-stage-top{padding:0 10px;gap:8px;grid-template-columns:auto 1fr auto}
   .rup-side-tabs button{padding:8px 12px}
+  .rup-side-actions{gap:4px}
+  .rup-side-actions>span{display:none}
+  .rup-side-actions button{padding:8px;width:34px;justify-content:center}
+  .rup-side-actions b{display:none}
   .rup-view-toggle button{padding:8px}
   .rup-complete-button{padding:10px 12px}
   .rup-lab-canvas{margin:10px;border-radius:12px}

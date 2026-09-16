@@ -117,6 +117,14 @@ export function DesignerApp({
     );
   }
 
+  function changeSide(nextSide: "front" | "back") {
+    setSide(nextSide);
+    setSelectedId(null);
+    setEditMode(true);
+    setActiveTool("start");
+    setPanelOpen(true);
+  }
+
   function selectProduct(id: string) {
     const next = products.find((p) => p.id === id);
     if (!next) return;
@@ -667,8 +675,18 @@ export function DesignerApp({
         <section className="rup-lab-stage-shell">
           <header className="rup-lab-stage-top">
             <div className="rup-side-tabs">
-              <button className={side === "front" ? "active" : ""} onClick={() => setSide("front")} type="button">Front</button>
-              <button className={side === "back" ? "active" : ""} onClick={() => setSide("back")} type="button">Back</button>
+              <button className={side === "front" ? "active" : ""} onClick={() => changeSide("front")} type="button">Front</button>
+              <button className={side === "back" ? "active" : ""} onClick={() => changeSide("back")} type="button">Back</button>
+            </div>
+
+            <div className="rup-side-actions" aria-label={`${side} design actions`}>
+              <span>Editing {side}</span>
+              <button type="button" onClick={() => openTool("upload")} aria-label={`Upload artwork to ${side}`}>
+                <Upload /> <b>Upload</b>
+              </button>
+              <button type="button" onClick={() => openTool("text")} aria-label={`Add text to ${side}`}>
+                <Type /> <b>Text</b>
+              </button>
             </div>
 
             <div className="rup-stage-product-label">
