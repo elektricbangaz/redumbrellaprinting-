@@ -1089,3 +1089,9 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 
 .live-layer.controls-only>img,
 .live-layer.controls-only>.live-text-layer{visibility:hidden!important}
+
+.rup-field-help{display:block;margin-top:4px;font-size:10px;line-height:1.35;color:#777}
+.apparel-zone-dynamic{position:absolute!important}
+@media(max-width:760px){
+  .rup-lab .apparel-zone-dynamic{position:absolute!important}
+}
