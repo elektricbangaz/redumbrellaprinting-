@@ -441,3 +441,22 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 }
 
 .catalog-source-link{display:inline-flex;margin-top:14px;font-size:13px;font-weight:800;color:#d20d14;text-decoration:underline;text-underline-offset:3px}
+
+/* Create Studio: both sides are editable and the preview can be rotated. */
+.designer-side-hint{margin:0;color:#777;font-size:11px;line-height:1.4}
+.designer-side-hint strong{text-transform:capitalize;color:var(--red)}
+.designer-view-help{margin-left:auto;align-self:center;color:#777;font-size:11px}
+.designer-canvas{perspective:1100px;overflow:hidden;touch-action:none}
+.product-3d-stage{position:relative;width:78%;max-width:500px;height:92%;min-height:430px;transform-style:preserve-3d;transition:transform .08s linear;cursor:grab}
+.product-3d-stage:active{cursor:grabbing}
+.product-face{position:absolute;inset:0;display:grid;place-items:center;backface-visibility:hidden;transform-style:preserve-3d}
+.product-face-back{transform:rotateY(180deg)}
+.product-edge{position:absolute;left:calc(50% - 12px);top:4%;width:24px;height:92%;border-radius:12px;background:linear-gradient(90deg,#c9c9c9,#f4f4f4 45%,#aaa);transform:rotateY(90deg);backface-visibility:visible}
+.product-face>.mockup{width:100%!important;max-width:none!important;height:100%;object-fit:contain}
+.product-face>.print-area{width:41%;height:42%;top:29%;left:29.5%;border-color:rgba(201,20,24,.4)}
+.product-face .design-layer-text{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.05}
+@media(max-width:760px){
+  .designer-view-help{display:block;width:100%;margin:4px 0 0}
+  .designer-canvas-tabs{flex-wrap:wrap}
+  .product-3d-stage{width:92%;min-height:380px}
+}

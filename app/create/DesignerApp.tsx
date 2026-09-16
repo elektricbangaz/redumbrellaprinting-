@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Bold,
   Copy,
@@ -50,8 +50,6 @@ export function DesignerApp({
   initialProductId: string;
 }) {
   const cart = useCart();
-  const canvasRef = useRef<HTMLDivElement>(null);
-
   const [productId, setProductId] = useState(initialProductId);
   const product = products.find((p) => p.id === productId)!;
 
@@ -64,12 +62,19 @@ export function DesignerApp({
   const [textDraft, setTextDraft] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [added, setAdded] = useState(false);
+  const [viewAngle, setViewAngle] = useState(0);
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
 
   function updateLayers(updater: (layers: DesignLayer[]) => DesignLayer[]) {
     setDesign((prev) => ({ ...prev, [side]: updater(prev[side]) }));
+  }
+
+  function changeSide(nextSide: "front" | "back") {
+    setSide(nextSide);
+    setSelectedId(null);
+    setViewAngle(nextSide === "front" ? 0 : 180);
   }
 
   function selectProduct(id: string) {
@@ -163,7 +168,7 @@ export function DesignerApp({
   function startDrag(e: React.PointerEvent, layerId: string) {
     e.stopPropagation();
     setSelectedId(layerId);
-    const container = canvasRef.current;
+    const container = e.currentTarget.parentElement;
     if (!container) return;
     const rect = container.getBoundingClientRect();
 
@@ -184,6 +189,67 @@ export function DesignerApp({
     }
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+  }
+
+  function rotatePreview(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return;
+    const startX = e.clientX;
+    const startAngle = viewAngle;
+    e.currentTarget.setPointerCapture(e.pointerId);
+
+    function onMove(moveEvent: PointerEvent) {
+      setViewAngle(startAngle + (moveEvent.clientX - startX) * 0.7);
+    }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  function renderFace(face: "front" | "back") {
+    const faceLayers = design[face];
+    return (
+      <div className={`product-face product-face-${face}`}>
+        <img className="mockup" src={product.images[0]} alt={`${product.name} ${face}`} />
+        <div className="print-area">
+          {faceLayers.map((layer) => (
+            <div
+              key={layer.id}
+              className={`design-layer ${side === face && selectedId === layer.id ? "selected" : ""}`}
+              style={{
+                left: `${layer.x}%`,
+                top: `${layer.y}%`,
+                transform: `translate(-50%, -50%) rotate(${layer.rotation}deg)`,
+                width: layer.type === "image" ? `${layer.widthPct}%` : "90%",
+              }}
+              onPointerDown={(e) => {
+                if (side === face) startDrag(e, layer.id);
+              }}
+            >
+              {layer.type === "text" ? (
+                <span
+                  className="design-layer-text"
+                  style={{
+                    fontFamily: layer.fontFamily,
+                    fontWeight: layer.bold ? 800 : 500,
+                    fontStyle: layer.italic ? "italic" : "normal",
+                    textAlign: layer.align,
+                    color: layer.color,
+                    fontSize: layer.fontSize,
+                  }}
+                >
+                  {layer.content}
+                </span>
+              ) : (
+                <img src={layer.src} alt="Uploaded artwork" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const hasDesign = design.front.length > 0 || design.back.length > 0;
@@ -244,6 +310,7 @@ export function DesignerApp({
           <h4>
             <Upload size={14} /> Upload Artwork
           </h4>
+          <p className="designer-side-hint">Adding to: <strong>{side}</strong></p>
           <label className="upload-box">
             Click to upload or drag and drop
             <br />
@@ -268,6 +335,7 @@ export function DesignerApp({
           <h4>
             <Type size={14} /> Add Text
           </h4>
+          <p className="designer-side-hint">Text will be placed on the <strong>{side}</strong>.</p>
           <input
             type="text"
             placeholder="Your text here..."
@@ -361,47 +429,23 @@ export function DesignerApp({
       {/* Center: canvas */}
       <div className="designer-canvas-wrap">
         <div className="designer-canvas-tabs">
-          <button className={side === "front" ? "active" : ""} onClick={() => setSide("front")}>
+          <button className={side === "front" ? "active" : ""} onClick={() => changeSide("front")}>
             Front
           </button>
-          <button className={side === "back" ? "active" : ""} onClick={() => setSide("back")}>
+          <button className={side === "back" ? "active" : ""} onClick={() => changeSide("back")}>
             Back
           </button>
+          <span className="designer-view-help">Drag the product to rotate</span>
         </div>
         <div className="designer-canvas" onPointerDown={() => setSelectedId(null)}>
-          <img className="mockup" src={product.images[0]} alt={product.name} />
-          <div className="print-area" ref={canvasRef}>
-            {layers.map((layer) => (
-              <div
-                key={layer.id}
-                className={`design-layer ${selectedId === layer.id ? "selected" : ""}`}
-                style={{
-                  left: `${layer.x}%`,
-                  top: `${layer.y}%`,
-                  transform: `translate(-50%, -50%) rotate(${layer.rotation}deg)`,
-                  width: layer.type === "image" ? `${layer.widthPct}%` : "auto",
-                }}
-                onPointerDown={(e) => startDrag(e, layer.id)}
-              >
-                {layer.type === "text" ? (
-                  <span
-                    className="design-layer-text"
-                    style={{
-                      fontFamily: layer.fontFamily,
-                      fontWeight: layer.bold ? 800 : 500,
-                      fontStyle: layer.italic ? "italic" : "normal",
-                      textAlign: layer.align,
-                      color: layer.color,
-                      fontSize: layer.fontSize,
-                    }}
-                  >
-                    {layer.content}
-                  </span>
-                ) : (
-                  <img src={layer.src} alt="Uploaded artwork" />
-                )}
-              </div>
-            ))}
+          <div
+            className="product-3d-stage"
+            onPointerDown={rotatePreview}
+            style={{ transform: `rotateY(${viewAngle}deg)` }}
+          >
+            {renderFace("front")}
+            <div className="product-edge" aria-hidden="true" />
+            {renderFace("back")}
           </div>
         </div>
         <div className="admin-toolbar" style={{ justifyContent: "center" }}>
