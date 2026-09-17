@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { DecalGeometry } from "three/examples/jsm/geometries/DecalGeometry.js";
 import type { DesignLayer, DesignSides } from "@/lib/designer-types";
 import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 
@@ -82,7 +81,7 @@ async function renderDesignTexture(layers: DesignLayer[]) {
   canvas.width = mobile ? 900 : 1400;
   canvas.height = mobile ? 1040 : 1600;
 
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) return canvas;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -165,25 +164,75 @@ async function renderDesignTexture(layers: DesignLayer[]) {
   return canvas;
 }
 
-function largestMesh(root: THREE.Object3D) {
-  let selected: THREE.Mesh | null = null;
-  let volume = 0;
+/**
+ * The editor used to project artwork by generating DecalGeometry from the shirt
+ * mesh itself. That made the shirt triangles part of the artwork geometry, so
+ * folds / depth clipping / z-fighting could literally cut text and logos into
+ * patchy fragments. The print layer is now its own transparent render surface.
+ * The garment mesh and the artwork no longer share geometry or material state.
+ */
+function createPrintSurface({
+  root,
+  config,
+  printZoneId,
+  side,
+}: {
+  root: THREE.Object3D;
+  config: (typeof GARMENT_MODELS)[string];
+  printZoneId?: PrintZoneId;
+  side: "front" | "back";
+}) {
+  root.updateMatrixWorld(true);
 
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    obj.geometry.computeBoundingBox();
-    const box = obj.geometry.boundingBox;
-    if (!box) return;
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const zone =
+    config?.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
+    config?.printZones?.find((candidate) => candidate.side === side);
 
-    const size = box.getSize(new THREE.Vector3());
-    const next = Math.max(0.000001, size.x * size.y * size.z);
-    if (next > volume) {
-      volume = next;
-      selected = obj;
-    }
+  const scale = zone?.projectionScale || config?.printScale || [0.36, 0.42];
+  const offset = zone?.projectionOffset || [0, -0.07];
+  const width = Math.max(0.01, size.x * scale[0]);
+  const height = Math.max(0.01, size.y * scale[1]);
+
+  const geometry = new THREE.PlaneGeometry(width, height, 1, 1);
+  const material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 1,
+    alphaTest: 0.001,
+    depthWrite: false,
+    // Deliberately independent of garment depth. FrontSide culling prevents the
+    // active print surface from appearing through the opposite side of the shirt.
+    depthTest: false,
+    toneMapped: false,
+    side: THREE.FrontSide,
   });
 
-  return selected;
+  const surface = new THREE.Mesh(geometry, material);
+  const gap = Math.max(0.035, size.z * 0.025);
+
+  // The garment itself is rotated when Back is selected, so the active physical
+  // surface always faces +Z. Never place a Back design at box.min.z after the
+  // garment has already been flipped; that was one of the old occlusion bugs.
+  surface.position.set(
+    center.x + size.x * offset[0],
+    center.y + size.y * offset[1],
+    box.max.z + gap
+  );
+  surface.rotation.set(0, 0, 0);
+  surface.renderOrder = 100;
+  surface.frustumCulled = false;
+  surface.userData.redUmbrellaPrintSurface = true;
+
+  return surface;
+}
+
+function disposePrintSurface(surface: THREE.Mesh | null) {
+  if (!surface) return;
+  surface.geometry.dispose();
+  const materials = Array.isArray(surface.material) ? surface.material : [surface.material];
+  materials.forEach((material) => material.dispose());
 }
 
 export function PremiumGarmentViewer({
@@ -202,8 +251,7 @@ export function PremiumGarmentViewer({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const garmentRef = useRef<THREE.Object3D | null>(null);
-  const meshRef = useRef<THREE.Mesh | null>(null);
-  const decalRef = useRef<THREE.Mesh | null>(null);
+  const printSurfaceRef = useRef<THREE.Mesh | null>(null);
   const textureRef = useRef<THREE.CanvasTexture | null>(null);
   const floorRef = useRef<THREE.Mesh | null>(null);
 
@@ -286,6 +334,7 @@ export function PremiumGarmentViewer({
         antialias: true,
         preserveDrawingBuffer: true,
         powerPreference: "high-performance",
+        alpha: false,
       });
     } catch {
       setState("fallback");
@@ -381,10 +430,10 @@ export function PremiumGarmentViewer({
         const center = scaledBox.getCenter(new THREE.Vector3());
         root.position.sub(center);
         root.rotation.y = side === "back" ? Math.PI : 0;
+        root.updateMatrixWorld(true);
 
         scene.add(root);
         garmentRef.current = root;
-        meshRef.current = largestMesh(root);
 
         resize();
         fitCamera();
@@ -419,12 +468,7 @@ export function PremiumGarmentViewer({
       observer.disconnect();
       controls.dispose();
       textureRef.current?.dispose();
-      decalRef.current?.geometry.dispose();
-
-      const decalMaterial = decalRef.current?.material;
-      if (decalMaterial) {
-        (Array.isArray(decalMaterial) ? decalMaterial : [decalMaterial]).forEach((material) => material.dispose());
-      }
+      disposePrintSurface(printSurfaceRef.current);
 
       rootDispose(garmentRef.current);
       floor.geometry.dispose();
@@ -437,8 +481,7 @@ export function PremiumGarmentViewer({
       cameraRef.current = null;
       controlsRef.current = null;
       garmentRef.current = null;
-      meshRef.current = null;
-      decalRef.current = null;
+      printSurfaceRef.current = null;
       textureRef.current = null;
       floorRef.current = null;
     };
@@ -477,82 +520,44 @@ export function PremiumGarmentViewer({
     if (controlsRef.current) controlsRef.current.enabled = interactive;
   }, [interactive]);
 
+  // Build the active print surface. This REPLACES the old mesh-derived decal
+  // path entirely; it is not layered on top of DecalGeometry.
   useEffect(() => {
     const scene = sceneRef.current;
     const root = garmentRef.current;
-    const mesh = meshRef.current;
-    if (!scene || !root || !mesh || state !== "ready") return;
+    if (!scene || !root || !config || state !== "ready") return;
 
-    if (decalRef.current) {
-      scene.remove(decalRef.current);
-      decalRef.current.geometry.dispose();
-      const materials = Array.isArray(decalRef.current.material)
-        ? decalRef.current.material
-        : [decalRef.current.material];
-      materials.forEach((material) => material.dispose());
-      decalRef.current = null;
+    if (printSurfaceRef.current) {
+      scene.remove(printSurfaceRef.current);
+      disposePrintSurface(printSurfaceRef.current);
+      printSurfaceRef.current = null;
     }
 
-    root.updateMatrixWorld(true);
-    mesh.updateMatrixWorld(true);
+    const surface = createPrintSurface({ root, config, printZoneId, side });
+    printSurfaceRef.current = surface;
+    scene.add(surface);
+    capture();
 
-    const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const zone =
-      config?.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
-      config?.printZones?.find((candidate) => candidate.side === side);
+    return () => {
+      if (printSurfaceRef.current === surface) {
+        scene.remove(surface);
+        disposePrintSurface(surface);
+        printSurfaceRef.current = null;
+      }
+    };
+  }, [side, state, config, printZoneId]);
 
-    const scale = zone?.projectionScale || config?.printScale || [0.36, 0.42];
-    const offset = zone?.projectionOffset || [0, -0.07];
-    const position = new THREE.Vector3(
-      center.x + size.x * offset[0],
-      center.y + size.y * offset[1],
-      side === "front" ? box.max.z + 0.01 : box.min.z - 0.01
-    );
-    const orientation = new THREE.Euler(0, side === "front" ? 0 : Math.PI, 0);
-
-    try {
-      const geometry = new DecalGeometry(
-        mesh,
-        position,
-        orientation,
-        new THREE.Vector3(
-          size.x * scale[0],
-          size.y * scale[1],
-          Math.max(size.z * 0.2, 0.05)
-        )
-      );
-
-      const material = new THREE.MeshBasicMaterial({
-        transparent: true,
-        alphaTest: 0.01,
-        depthWrite: false,
-        depthTest: true,
-        polygonOffset: true,
-        polygonOffsetFactor: -6,
-        polygonOffsetUnits: -6,
-        toneMapped: false,
-        side: THREE.DoubleSide,
-      });
-
-      const decal = new THREE.Mesh(geometry, material);
-      decal.renderOrder = 20;
-      decalRef.current = decal;
-      scene.add(decal);
-    } catch {
-      decalRef.current = null;
-    }
-  }, [side, state, config?.printScale, config?.printZones, printZoneId]);
-
+  // Update only the transparent print-surface texture when text/artwork moves.
+  // The GLB and garment materials stay untouched, so edits are instantaneous and
+  // cannot be broken apart by the garment mesh.
   useEffect(() => {
-    const decal = decalRef.current;
-    if (!decal || state !== "ready") return;
+    const surface = printSurfaceRef.current;
+    if (!surface || state !== "ready") return;
 
     let cancelled = false;
     const frame = requestAnimationFrame(async () => {
       const layers = design[side];
-      const material = decal.material as THREE.MeshBasicMaterial;
+      const material = surface.material as THREE.MeshBasicMaterial;
       if (cancelled) return;
 
       if (!layers.length) {
@@ -565,11 +570,17 @@ export function PremiumGarmentViewer({
       }
 
       const canvas = await renderDesignTexture(layers);
-      if (cancelled) return;
+      if (cancelled || printSurfaceRef.current !== surface) return;
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = rendererRef.current?.capabilities.getMaxAnisotropy() || 1;
+      texture.anisotropy = Math.min(
+        8,
+        rendererRef.current?.capabilities.getMaxAnisotropy() || 1
+      );
+      texture.generateMipmaps = true;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
       texture.needsUpdate = true;
 
       const previous = textureRef.current;
@@ -584,7 +595,7 @@ export function PremiumGarmentViewer({
       cancelled = true;
       cancelAnimationFrame(frame);
     };
-  }, [design, side, state]);
+  }, [design, side, state, printZoneId]);
 
   const fallbackImage = config?.fallbackImage || "/mockups/plain-white-shirt.webp";
 
