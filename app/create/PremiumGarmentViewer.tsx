@@ -26,6 +26,31 @@ const COLOR_MAP: Record<string, string> = {
 const getHex = (name: string) => name.startsWith("#") ? name : (COLOR_MAP[name] || "#d8d8d4");
 
 const IMAGE_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
+const MODEL_CACHE = new Map<string, Promise<THREE.Object3D>>();
+
+function loadGarmentTemplate(url: string) {
+  const existing = MODEL_CACHE.get(url);
+  if (existing) return existing;
+  const pending = new GLTFLoader().loadAsync(url).then((gltf) => gltf.scene);
+  MODEL_CACHE.set(url, pending);
+  pending.catch(() => MODEL_CACHE.delete(url));
+  return pending;
+}
+
+function cloneGarmentTemplate(template: THREE.Object3D) {
+  const root = template.clone(true);
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    obj.geometry = obj.geometry.clone();
+  });
+  return root;
+}
+
+export function preloadGarmentModel(productSlug: string) {
+  const url = GARMENT_MODELS[productSlug]?.modelUrl;
+  if (!url) return Promise.resolve(null);
+  return loadGarmentTemplate(url).then(() => null).catch(() => null);
+}
 
 async function loadImage(src: string) {
   const existing = IMAGE_CACHE.get(src);
@@ -213,38 +238,43 @@ export function PremiumGarmentViewer({
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const loader = new GLTFLoader();
-    loader.load(config.modelUrl, (gltf) => {
-      if (disposed) return;
-      const root = gltf.scene;
-      root.traverse((obj) => {
-        if (!(obj instanceof THREE.Mesh)) return;
-        obj.castShadow = true; obj.receiveShadow = true;
-        obj.material = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(getHex(colorName)),
-          roughness: 0.9, metalness: 0, sheen: 0.2,
-          sheenColor: new THREE.Color("#ffffff"), sheenRoughness: 0.86,
+    void loadGarmentTemplate(config.modelUrl)
+      .then((template) => {
+        if (disposed) return;
+        const root = cloneGarmentTemplate(template);
+        root.traverse((obj) => {
+          if (!(obj instanceof THREE.Mesh)) return;
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+          obj.material = new THREE.MeshPhysicalMaterial({
+            color: new THREE.Color(getHex(colorName)),
+            roughness: 0.9,
+            metalness: 0,
+            sheen: 0.2,
+            sheenColor: new THREE.Color("#ffffff"),
+            sheenRoughness: 0.86,
+          });
         });
+
+        const initialBox = new THREE.Box3().setFromObject(root);
+        const initialSize = initialBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
+        root.scale.setScalar(3.15 / maxDim);
+        const scaledBox = new THREE.Box3().setFromObject(root);
+        root.position.sub(scaledBox.getCenter(new THREE.Vector3()));
+        root.position.y -= 0.03;
+        scene.add(root);
+
+        garmentRef.current = root;
+        meshRef.current = largestMesh(root);
+        boxRef.current = new THREE.Box3().setFromObject(root);
+        root.rotation.y = side === "back" ? Math.PI : 0;
+        setState("ready");
+        requestAnimationFrame(capture);
+      })
+      .catch(() => {
+        if (!disposed) setState("fallback");
       });
-
-      const initialBox = new THREE.Box3().setFromObject(root);
-      const initialSize = initialBox.getSize(new THREE.Vector3());
-      const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
-      root.scale.setScalar(3.15 / maxDim);
-      const scaledBox = new THREE.Box3().setFromObject(root);
-      root.position.sub(scaledBox.getCenter(new THREE.Vector3()));
-      root.position.y -= 0.03;
-      scene.add(root);
-
-      garmentRef.current = root;
-      meshRef.current = largestMesh(root);
-      boxRef.current = new THREE.Box3().setFromObject(root);
-      root.rotation.y = side === "back" ? Math.PI : 0;
-      setState("ready");
-      setTimeout(capture, 100);
-    }, undefined, () => {
-      if (!disposed) setState("fallback");
-    });
 
     const resize = () => {
       const w = container.clientWidth, h = container.clientHeight;
