@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { DesignSides } from "@/lib/designer-types";
 
 type History = {
@@ -12,6 +12,7 @@ type History = {
 const LIMIT = 40;
 
 export function useDesignHistory(initial: DesignSides) {
+  const lastCommitRef = useRef(0);
   const [history, setHistory] = useState<History>({
     past: [],
     present: initial,
@@ -24,8 +25,11 @@ export function useDesignHistory(initial: DesignSides) {
         ? (next as (prev: DesignSides) => DesignSides)(current.present)
         : next;
       if (value === current.present) return current;
+      const now = Date.now();
+      const coalesce = now - lastCommitRef.current < 220 && current.past.length > 0;
+      lastCommitRef.current = now;
       return {
-        past: [...current.past, current.present].slice(-LIMIT),
+        past: coalesce ? current.past : [...current.past, current.present].slice(-LIMIT),
         present: value,
         future: [],
       };
@@ -33,6 +37,7 @@ export function useDesignHistory(initial: DesignSides) {
   }, []);
 
   const replaceDesign = useCallback((next: DesignSides) => {
+    lastCommitRef.current = 0;
     setHistory({ past: [], present: next, future: [] });
   }, []);
 
