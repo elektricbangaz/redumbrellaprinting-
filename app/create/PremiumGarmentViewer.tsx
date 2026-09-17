@@ -25,14 +25,20 @@ const COLOR_MAP: Record<string, string> = {
 };
 const getHex = (name: string) => name.startsWith("#") ? name : (COLOR_MAP[name] || "#d8d8d4");
 
+const IMAGE_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
+
 async function loadImage(src: string) {
-  return await new Promise<HTMLImageElement | null>((resolve) => {
+  const existing = IMAGE_CACHE.get(src);
+  if (existing) return existing;
+  const pending = new Promise<HTMLImageElement | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
   });
+  IMAGE_CACHE.set(src, pending);
+  return pending;
 }
 
 async function renderDesignTexture(layers: DesignLayer[]) {
@@ -283,89 +289,109 @@ export function PremiumGarmentViewer({
     const scene = sceneRef.current;
     const root = garmentRef.current;
     const mesh = meshRef.current;
-    const box = boxRef.current;
-    if (!scene || !root || !mesh || !box || state !== "ready") return;
+    if (!scene || !root || !mesh || state !== "ready") return;
+
+    if (decalRef.current) {
+      scene.remove(decalRef.current);
+      decalRef.current.geometry.dispose();
+      const mats = Array.isArray(decalRef.current.material) ? decalRef.current.material : [decalRef.current.material];
+      mats.forEach((m) => m.dispose());
+      decalRef.current = null;
+    }
+
+    root.updateMatrixWorld(true);
+    mesh.updateMatrixWorld(true);
+    const liveBox = new THREE.Box3().setFromObject(root);
+    const size = liveBox.getSize(new THREE.Vector3());
+    const center = liveBox.getCenter(new THREE.Vector3());
+    const zone =
+      config?.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
+      config?.printZones?.find((candidate) => candidate.side === side);
+    const projectionScale = zone?.projectionScale || config?.printScale || [0.36, 0.42];
+    const projectionOffset = zone?.projectionOffset || [0, -0.07];
+    const pos = new THREE.Vector3(
+      center.x + size.x * projectionOffset[0],
+      center.y + size.y * projectionOffset[1],
+      side === "front" ? liveBox.max.z + 0.012 : liveBox.min.z - 0.012
+    );
+    const orient = new THREE.Euler(0, side === "front" ? 0 : Math.PI, 0);
+
+    try {
+      const geo = new DecalGeometry(
+        mesh,
+        pos,
+        orient,
+        new THREE.Vector3(
+          size.x * projectionScale[0],
+          size.y * projectionScale[1],
+          Math.max(size.z * 0.14, 0.028)
+        )
+      );
+      const mat = new THREE.MeshBasicMaterial({
+        transparent: true,
+        alphaTest: 0.02,
+        depthWrite: false,
+        depthTest: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -8,
+        polygonOffsetUnits: -8,
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      });
+      const decal = new THREE.Mesh(geo, mat);
+      decalRef.current = decal;
+      scene.add(decal);
+    } catch {}
+  }, [side, state, config?.printScale, config?.printZones, printZoneId]);
+
+  useEffect(() => {
+    const decal = decalRef.current;
+    if (!decal || state !== "ready") return;
     let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      if (cancelled) return;
-
-      if (decalRef.current) {
-        scene.remove(decalRef.current);
-        decalRef.current.geometry.dispose();
-        const mats = Array.isArray(decalRef.current.material) ? decalRef.current.material : [decalRef.current.material];
-        mats.forEach((m) => m.dispose());
-        decalRef.current = null;
-      }
-      textureRef.current?.dispose();
-      textureRef.current = null;
-
+    const frame = requestAnimationFrame(async () => {
       const layers = design[side];
-      if (!layers.length) { capture(); return; }
+      if (cancelled) return;
+      const mat = decal.material as THREE.MeshBasicMaterial;
+
+      if (!layers.length) {
+        textureRef.current?.dispose();
+        textureRef.current = null;
+        mat.map = null;
+        mat.needsUpdate = true;
+        capture();
+        return;
+      }
 
       const canvas = await renderDesignTexture(layers);
       if (cancelled) return;
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = rendererRef.current?.capabilities.getMaxAnisotropy() || 1;
-      texture.needsUpdate = true;
-      textureRef.current = texture;
+      const nextTexture = new THREE.CanvasTexture(canvas);
+      nextTexture.colorSpace = THREE.SRGBColorSpace;
+      nextTexture.anisotropy = rendererRef.current?.capabilities.getMaxAnisotropy() || 1;
+      nextTexture.needsUpdate = true;
 
-      root.updateMatrixWorld(true);
-      mesh.updateMatrixWorld(true);
-      const liveBox = new THREE.Box3().setFromObject(root);
-      const size = liveBox.getSize(new THREE.Vector3());
-      const center = liveBox.getCenter(new THREE.Vector3());
-      const zone =
-        config?.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
-        config?.printZones?.find((candidate) => candidate.side === side);
-      const projectionScale = zone?.projectionScale || config?.printScale || [0.36, 0.42];
-      const projectionOffset = zone?.projectionOffset || [0, -0.07];
-      const pos = new THREE.Vector3(
-        center.x + size.x * projectionOffset[0],
-        center.y + size.y * projectionOffset[1],
-        side === "front" ? liveBox.max.z + 0.012 : liveBox.min.z - 0.012
-      );
-      const orient = new THREE.Euler(0, side === "front" ? 0 : Math.PI, 0);
-      try {
-        const geo = new DecalGeometry(
-          mesh, pos, orient,
-          new THREE.Vector3(
-            size.x * projectionScale[0],
-            size.y * projectionScale[1],
-            Math.max(size.z * 0.14, 0.028)
-          )
-        );
-        const mat = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: true,
-          alphaTest: 0.02,
-          depthWrite: false,
-          depthTest: true,
-          polygonOffset: true,
-          polygonOffsetFactor: -8,
-          polygonOffsetUnits: -8,
-          toneMapped: false,
-          side: THREE.DoubleSide,
-        });
-        const decal = new THREE.Mesh(geo, mat);
-        decalRef.current = decal;
-        scene.add(decal);
-        capture();
-      } catch {
-        capture();
-      }
-    }, 70);
+      const previous = textureRef.current;
+      textureRef.current = nextTexture;
+      mat.map = nextTexture;
+      mat.needsUpdate = true;
+      previous?.dispose();
+      capture();
+    });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      cancelAnimationFrame(frame);
     };
-  }, [design, side, state, config?.printScale, config?.printZones, printZoneId]);
+  }, [design, side, state]);
 
   return (
     <div className={className || "premium-garment-viewer"}>
       <div ref={mountRef} className="premium-garment-stage" />
-      {state === "loading" && <div className="viewer-status">Loading 3D garment…</div>}
+      {state === "loading" && (
+        <div className="viewer-loading-preview">
+          <img src={config?.fallbackImage || "/mockups/plain-white-shirt.webp"} alt="" />
+          <span>Preparing 3D preview…</span>
+        </div>
+      )}
       {state === "fallback" && (
         <div className="viewer-fallback">
           <img src={config?.fallbackImage || "/mockups/plain-white-shirt.webp"} alt="" />
