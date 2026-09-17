@@ -1,3 +1,4 @@
+import "./mobile.css";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CORE_CATALOG } from "@/lib/catalog";
