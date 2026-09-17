@@ -1,21 +1,24 @@
 "use client";
 
 import type { DesignSides } from "@/lib/designer-types";
-import type { PrintZoneId } from "@/lib/garment-models";
 import type { SupplyMode } from "@/lib/designer-pricing";
+import type { DecorationMethod, DesignSurfaceId } from "@/lib/design-document";
 
 export type DesignerDraft = {
-  version: 1;
+  version: 2;
   savedAt: number;
   productId: string;
+  productSlug: string;
+  productName: string;
   color: string;
   customColor: string;
   size: string;
   quantity: number;
   side: "front" | "back";
   design: DesignSides;
-  printZoneId: PrintZoneId;
+  surfaceId: DesignSurfaceId;
   supplyMode: SupplyMode;
+  decorationMethod: DecorationMethod;
 };
 
 const DB_NAME = "red-umbrella-design-lab";
@@ -53,7 +56,10 @@ export async function loadDesignerDraft() {
   const result = await new Promise<DesignerDraft | null>((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const request = tx.objectStore(STORE).get(KEY);
-    request.onsuccess = () => resolve((request.result as DesignerDraft | undefined) ?? null);
+    request.onsuccess = () => {
+      const draft = request.result as (DesignerDraft | { version?: number }) | undefined;
+      resolve(draft?.version === 2 ? (draft as DesignerDraft) : null);
+    };
     request.onerror = () => reject(request.error);
   });
   db.close();
