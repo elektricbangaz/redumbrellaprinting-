@@ -14,6 +14,8 @@ const schema = z.object({
   quantity: z.number().int().min(1).max(1000),
   design: z.unknown(),
   printZoneId: z.string().optional(),
+  supplyMode: z.enum(["red-umbrella", "customer"]).optional(),
+  pricing: z.unknown().optional(),
   frontExport: z.string().optional(),
   backExport: z.string().optional(),
   previewImage: z.string().optional(),
@@ -73,6 +75,8 @@ export async function POST(req: Request) {
           size: input.size,
           quantity: input.quantity,
           printZoneId: input.printZoneId ?? null,
+          supplyMode: input.supplyMode ?? null,
+          pricing: input.pricing ?? null,
         },
         design: persistedDesign,
         exports: {
@@ -193,6 +197,8 @@ export async function POST(req: Request) {
           size: input.size,
           quantity: input.quantity,
           printZoneId: input.printZoneId ?? null,
+          supplyMode: input.supplyMode ?? null,
+          pricing: input.pricing ?? null,
           exports: {
             front: front?.secure_url ?? null,
             back: back?.secure_url ?? null,
