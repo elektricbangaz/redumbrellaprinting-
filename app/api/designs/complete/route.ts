@@ -17,7 +17,7 @@ const schema = z.object({
   surfaces: z.unknown().optional(),
   activeSurfaceId: z.string().optional(),
   decorationMethod: z.string().optional(),
-  surfaceExports: z.record(z.string()).optional(),
+  surfaceExports: z.record(z.string(), z.string()).optional(),
   printZoneId: z.string().optional(),
   supplyMode: z.enum(["red-umbrella", "customer"]).optional(),
   pricing: z.unknown().optional(),
