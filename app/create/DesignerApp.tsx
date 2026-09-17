@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { formatJMD } from "@/lib/money";
 import type { DesignLayer, DesignSides, ImageLayer, TextLayer } from "@/lib/designer-types";
-import { PremiumGarmentViewer } from "./PremiumGarmentViewer";
+import { preloadGarmentModel, PremiumGarmentViewer } from "./PremiumGarmentViewer";
 import { CylindricalProductViewer } from "./CylindricalProductViewer";
 import { FlatProductPreview } from "./FlatProductPreview";
 import { DesignOverlay } from "./DesignOverlay";
@@ -201,6 +201,11 @@ export function DesignerApp({
     () => dimensionsFromLabel(size)?.aspectRatio || (previewMode === "vehicle" ? 2.2 : 1.5),
     [size, previewMode]
   );
+
+  useEffect(() => {
+    if (previewMode !== "apparel3d") return;
+    void preloadGarmentModel(product.slug);
+  }, [previewMode, product.slug]);
 
   function updateLayers(updater: (layers: DesignLayer[]) => DesignLayer[]) {
     setDesign((prev) => ({ ...prev, [side]: updater(prev[side]) }));
