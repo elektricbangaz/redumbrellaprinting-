@@ -60,17 +60,42 @@ async function renderDesignTexture(layers: DesignLayer[]) {
       ctx.textAlign = layer.align;
       ctx.textBaseline = "middle";
       const maxWidth = ((layer.widthPct ?? 42) / 100) * canvas.width;
-      const words = layer.content.split(/\s+/);
       const lines: string[] = [];
-      let line = "";
-      for (const word of words) {
-        const test = line ? `${line} ${word}` : word;
-        if (ctx.measureText(test).width > maxWidth && line) {
-          lines.push(line); line = word;
-        } else line = test;
+      const paragraphs = layer.content.split(/\n/);
+      for (const paragraph of paragraphs) {
+        const words = paragraph.split(/\s+/).filter(Boolean);
+        let line = "";
+        for (const word of words) {
+          const chunks: string[] = [];
+          if (ctx.measureText(word).width > maxWidth) {
+            let chunk = "";
+            for (const char of word) {
+              const testChunk = chunk + char;
+              if (ctx.measureText(testChunk).width > maxWidth && chunk) {
+                chunks.push(chunk);
+                chunk = char;
+              } else chunk = testChunk;
+            }
+            if (chunk) chunks.push(chunk);
+          } else chunks.push(word);
+
+          for (const chunk of chunks) {
+            const test = line ? line + " " + chunk : chunk;
+            if (ctx.measureText(test).width > maxWidth && line) {
+              lines.push(line);
+              line = chunk;
+            } else {
+              line = test;
+            }
+          }
+        }
+        if (line) {
+          lines.push(line);
+          line = "";
+        }
+        if (!words.length) lines.push("");
       }
-      if (line) lines.push(line);
-      const lineHeight = px * 1.05;
+      const lineHeight = px * 1.08;
       const startY = -((lines.length - 1) * lineHeight) / 2;
       lines.forEach((value, index) => ctx.fillText(value, 0, startY + index * lineHeight, maxWidth));
     } else {
