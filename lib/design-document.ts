@@ -1,5 +1,5 @@
-import type { DesignSides } from "@/lib/designer-types";
 import type { SupplyMode } from "@/lib/designer-pricing";
+import type { DesignSurfaceId, SurfaceDesignState } from "@/lib/design-surfaces";
 
 export type DecorationMethod =
   | "heat-transfer"
@@ -9,20 +9,8 @@ export type DecorationMethod =
   | "uv-sticker"
   | "laser-engraving";
 
-export type DesignSurfaceId =
-  | "full-front"
-  | "left-chest"
-  | "right-chest"
-  | "full-back"
-  | "upper-back"
-  | "left-sleeve"
-  | "right-sleeve"
-  | "hem-tail"
-  | "full-wrap"
-  | "custom";
-
-export type DesignDocumentV1 = {
-  schemaVersion: 1;
+export type DesignDocumentV2 = {
+  schemaVersion: 2;
   updatedAt: number;
   productId: string;
   productSlug: string;
@@ -30,17 +18,20 @@ export type DesignDocumentV1 = {
   color: string;
   size: string;
   quantity: number;
-  side: "front" | "back";
-  surfaceId: DesignSurfaceId;
+  activeSurfaceId: DesignSurfaceId;
+  surfaces: SurfaceDesignState;
   supplyMode: SupplyMode;
   decorationMethod: DecorationMethod;
-  design: DesignSides;
   pricingSnapshot?: unknown;
 };
 
-export function createDesignDocument(input: Omit<DesignDocumentV1, "schemaVersion" | "updatedAt">): DesignDocumentV1 {
+export type DesignDocument = DesignDocumentV2;
+
+export function createDesignDocument(
+  input: Omit<DesignDocumentV2, "schemaVersion" | "updatedAt">
+): DesignDocumentV2 {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     updatedAt: Date.now(),
     ...input,
   };
