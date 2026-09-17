@@ -18,6 +18,8 @@ import {
   Package2,
   Palette,
   RotateCw,
+  Undo2,
+  Redo2,
   Sparkles,
   Trash2,
   Type,
@@ -35,6 +37,8 @@ import { CompleteDesignModal } from "./CompleteDesignModal";
 import { dimensionsFromLabel, renderFlatMockup, renderLayersToDataUrl } from "@/lib/design-export";
 import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 import { calculateDesignerPrice, type SupplyMode } from "@/lib/designer-pricing";
+import { useDesignHistory } from "./useDesignHistory";
+import { clearDesignerDraft, loadDesignerDraft, saveDesignerDraft } from "@/lib/designer-draft-db";
 
 type ProductOption = {
   id: string;
@@ -75,7 +79,15 @@ export function DesignerApp({
   const [size, setSize] = useState(initial.sizes[0] || "Standard");
   const [quantity, setQuantity] = useState(1);
   const [side, setSide] = useState<"front" | "back">("front");
-  const [design, setDesign] = useState<DesignSides>({ front: [], back: [] });
+  const {
+    design,
+    setDesign,
+    replaceDesign,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useDesignHistory({ front: [], back: [] });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
   const [uploadError, setUploadError] = useState("");
@@ -89,6 +101,8 @@ export function DesignerApp({
   const [panelOpen, setPanelOpen] = useState(false);
   const [printZoneId, setPrintZoneId] = useState<PrintZoneId>("full-front");
   const [supplyMode, setSupplyMode] = useState<SupplyMode>("red-umbrella");
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 761px)");
@@ -97,6 +111,68 @@ export function DesignerApp({
     mq.addEventListener?.("change", sync);
     return () => mq.removeEventListener?.("change", sync);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadDesignerDraft()
+      .then((draft) => {
+        if (cancelled || !draft || draft.version !== 1) return;
+        if (!products.some((candidate) => candidate.id === draft.productId)) return;
+        setProductId(draft.productId);
+        setColor(draft.color);
+        setCustomColor(draft.customColor);
+        setSize(draft.size);
+        setQuantity(Math.max(1, draft.quantity || 1));
+        setSide(draft.side === "back" ? "back" : "front");
+        setPrintZoneId(draft.printZoneId || "full-front");
+        setSupplyMode(draft.supplyMode || "red-umbrella");
+        replaceDesign(draft.design || { front: [], back: [] });
+        setDraftSavedAt(draft.savedAt || null);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDraftReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [products, replaceDesign]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const timer = window.setTimeout(() => {
+      saveDesignerDraft({
+        version: 1,
+        savedAt: Date.now(),
+        productId,
+        color,
+        customColor,
+        size,
+        quantity,
+        side,
+        design,
+        printZoneId,
+        supplyMode,
+      })
+        .then(() => setDraftSavedAt(Date.now()))
+        .catch(() => {});
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [draftReady, productId, color, customColor, size, quantity, side, design, printZoneId, supplyMode]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+      const modifier = event.metaKey || event.ctrlKey;
+      if (!modifier || event.key.toLowerCase() !== "z") return;
+      event.preventDefault();
+      if (event.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo]);
 
   const layers = design[side];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
@@ -143,7 +219,7 @@ export function DesignerApp({
     setSelectedId(null);
     setEditMode(true);
     setActiveTool("start");
-    setPanelOpen(true);
+    setPanelOpen(window.matchMedia("(min-width: 761px)").matches);
   }
 
   function selectProduct(id: string) {
@@ -333,6 +409,7 @@ export function DesignerApp({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to save design.");
       setReference(data.reference);
+      await clearDesignerDraft().catch(() => {});
     } catch (error) {
       setCompleteError(error instanceof Error ? error.message : "Unable to save design.");
     } finally {
@@ -743,10 +820,16 @@ export function DesignerApp({
 
             <div className="rup-side-actions" aria-label={`${side} design actions`}>
               <span>Editing {side}</span>
-              <button type="button" onClick={() => openTool("upload")} aria-label={`Upload artwork to ${side}`}>
+              <button type="button" onClick={undo} disabled={!canUndo} aria-label="Undo last design change">
+                <Undo2 /> <b>Undo</b>
+              </button>
+              <button type="button" onClick={redo} disabled={!canRedo} aria-label="Redo design change">
+                <Redo2 /> <b>Redo</b>
+              </button>
+              <button className="rup-quick-action" type="button" onClick={() => openTool("upload")} aria-label={`Upload artwork to ${side}`}>
                 <Upload /> <b>Upload</b>
               </button>
-              <button type="button" onClick={() => openTool("text")} aria-label={`Add text to ${side}`}>
+              <button className="rup-quick-action" type="button" onClick={() => openTool("text")} aria-label={`Add text to ${side}`}>
                 <Type /> <b>Text</b>
               </button>
             </div>
@@ -754,6 +837,7 @@ export function DesignerApp({
             <div className="rup-stage-product-label">
               <Box />
               <span><strong>{product.name}</strong>{size}</span>
+              <em className="rup-draft-status">{draftReady ? (draftSavedAt ? "Saved" : "Autosave on") : "Restoring…"}</em>
             </div>
 
             <div className="rup-stage-actions">
