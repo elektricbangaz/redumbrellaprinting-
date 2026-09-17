@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type SetStateAction } from "react";
 import type { DesignSides } from "@/lib/designer-types";
 
 type History = {
@@ -19,7 +19,7 @@ export function useDesignHistory(initial: DesignSides) {
     future: [],
   });
 
-  const setDesign = useCallback((next: React.SetStateAction<DesignSides>) => {
+  const setDesign = useCallback((next: SetStateAction<DesignSides>) => {
     setHistory((current) => {
       const value = typeof next === "function"
         ? (next as (prev: DesignSides) => DesignSides)(current.present)
