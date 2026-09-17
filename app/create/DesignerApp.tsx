@@ -44,7 +44,7 @@ import {
 } from "@/lib/design-surfaces";
 import { createDesignDocument, type DecorationMethod } from "@/lib/design-document";
 import { decorationMethodsForProduct, defaultDecorationMethod } from "@/lib/decoration-methods";
-import { preloadGarmentModel, PremiumGarmentViewer } from "./PremiumGarmentViewer";
+import { Garment3DStudio, preloadGarmentModel } from "./Garment3DStudio";
 import { CylindricalProductViewer } from "./CylindricalProductViewer";
 import { FlatProductPreview } from "./FlatProductPreview";
 import { DesignOverlay } from "./DesignOverlay";
@@ -525,7 +525,7 @@ export function DesignerApp({
     <>
       {previewMode === "apparel3d" && (
         <>
-          <PremiumGarmentViewer
+          <Garment3DStudio
             productSlug={product.slug}
             colorName={customColor}
             side={side}
