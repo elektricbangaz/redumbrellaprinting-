@@ -34,6 +34,7 @@ import { FontPicker } from "./FontPicker";
 import { CompleteDesignModal } from "./CompleteDesignModal";
 import { dimensionsFromLabel, renderFlatMockup, renderLayersToDataUrl } from "@/lib/design-export";
 import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
+import { calculateDesignerPrice, type SupplyMode } from "@/lib/designer-pricing";
 
 type ProductOption = {
   id: string;
@@ -87,6 +88,7 @@ export function DesignerApp({
   const [activeTool, setActiveTool] = useState<ToolId>("start");
   const [panelOpen, setPanelOpen] = useState(false);
   const [printZoneId, setPrintZoneId] = useState<PrintZoneId>("full-front");
+  const [supplyMode, setSupplyMode] = useState<SupplyMode>("red-umbrella");
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 761px)");
@@ -107,8 +109,17 @@ export function DesignerApp({
   const previewMode =
     product.previewMode ||
     (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" : "flat");
-  const quoteOnly = Boolean(product.quoteOnly || product.basePrice <= 0);
-  const price = product.basePrice * quantity;
+  const pricing = calculateDesignerPrice({
+    productSlug: product.slug,
+    quantity,
+    size,
+    printZoneId: activePrintZone?.id,
+    hasFrontDesign: design.front.length > 0,
+    hasBackDesign: design.back.length > 0,
+    supplyMode,
+  });
+  const quoteOnly = pricing.quoteOnly;
+  const price = pricing.total ?? 0;
   const smartTextColor = contrastTextColor(customColor);
   const flatRatio = useMemo(
     () => dimensionsFromLabel(size)?.aspectRatio || (previewMode === "vehicle" ? 2.2 : 1.5),
@@ -311,6 +322,8 @@ export function DesignerApp({
           quantity,
           design,
           printZoneId: activePrintZone?.id,
+          supplyMode,
+          pricing,
           frontExport,
           backExport,
           previewImage: finalPreview || undefined,
@@ -506,6 +519,15 @@ export function DesignerApp({
                     {product.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </label>
+                {previewMode === "apparel3d" && (
+                  <div className="rup-supply-choice">
+                    <span className="rup-field-caption">Garment</span>
+                    <div className="rup-segmented">
+                      <button type="button" className={supplyMode === "red-umbrella" ? "active" : ""} onClick={() => setSupplyMode("red-umbrella")}>Red Umbrella supplies it</button>
+                      <button type="button" className={supplyMode === "customer" ? "active" : ""} onClick={() => setSupplyMode("customer")}>I have my own</button>
+                    </div>
+                  </div>
+                )}
                 {previewMode === "apparel3d" && availablePrintZones.length > 0 && (
                   <label className="rup-field-label">
                     <span>Print placement</span>
@@ -775,11 +797,12 @@ export function DesignerApp({
               </label>
               {!quoteOnly ? (
                 <div className="rup-price-block">
-                  <span>Estimate</span>
+                  <span>{pricing.label}</span>
                   <strong>{formatJMD(price)}</strong>
+                  {pricing.note && <small>{pricing.note}</small>}
                 </div>
               ) : (
-                <div className="rup-price-block"><span>Pricing</span><strong>Custom quote</strong></div>
+                <div className="rup-price-block"><span>Pricing</span><strong>{pricing.label}</strong>{pricing.note && <small>{pricing.note}</small>}</div>
               )}
             </div>
           </footer>
