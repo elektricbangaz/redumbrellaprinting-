@@ -4,6 +4,11 @@ import type { DesignSides } from "@/lib/designer-types";
 import type { PrintZoneId } from "@/lib/garment-models";
 import type { SupplyMode } from "@/lib/designer-pricing";
 import type { DecorationMethod } from "@/lib/design-document";
+import {
+  surfaceStateFromLegacy,
+  type DesignSurfaceId,
+  type SurfaceDesignState,
+} from "@/lib/design-surfaces";
 
 export type DesignerDraft = {
   version: 1;
@@ -20,6 +25,8 @@ export type DesignerDraft = {
   printZoneId: PrintZoneId;
   supplyMode: SupplyMode;
   decorationMethod?: DecorationMethod;
+  activeSurfaceId?: DesignSurfaceId;
+  surfaces?: SurfaceDesignState;
 };
 
 const DB_NAME = "red-umbrella-design-lab";
@@ -42,9 +49,14 @@ function openDb() {
 export async function saveDesignerDraft(draft: DesignerDraft) {
   if (typeof indexedDB === "undefined") return;
   const db = await openDb();
+  const value: DesignerDraft = {
+    ...draft,
+    activeSurfaceId: draft.activeSurfaceId ?? draft.printZoneId,
+    surfaces: draft.surfaces ?? surfaceStateFromLegacy(draft.design),
+  };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(draft, KEY);
+    tx.objectStore(STORE).put(value, KEY);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -57,7 +69,15 @@ export async function loadDesignerDraft() {
   const result = await new Promise<DesignerDraft | null>((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const request = tx.objectStore(STORE).get(KEY);
-    request.onsuccess = () => resolve((request.result as DesignerDraft | undefined) ?? null);
+    request.onsuccess = () => {
+      const draft = (request.result as DesignerDraft | undefined) ?? null;
+      if (!draft) return resolve(null);
+      resolve({
+        ...draft,
+        activeSurfaceId: draft.activeSurfaceId ?? draft.printZoneId,
+        surfaces: draft.surfaces ?? surfaceStateFromLegacy(draft.design),
+      });
+    };
     request.onerror = () => reject(request.error);
   });
   db.close();
