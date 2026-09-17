@@ -1167,3 +1167,32 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
   .rup-segmented button{font-size:10px}
   .rup-price-block small{display:none}
 }
+
+
+/* Designer app-state polish */
+.rup-side-actions button:disabled{
+  opacity:.32;
+  cursor:not-allowed;
+}
+.rup-draft-status{
+  margin-left:8px;
+  font-style:normal;
+  font-size:9px;
+  line-height:1;
+  color:#73777b;
+  padding:5px 7px;
+  border:1px solid #e2e2e2;
+  background:#fafafa;
+  border-radius:999px;
+  white-space:nowrap;
+}
+@media(max-width:760px){
+  .rup-side-actions .rup-quick-action{display:none!important}
+  .rup-side-actions{min-width:auto!important}
+  .rup-side-actions button{
+    width:34px!important;
+    min-width:34px!important;
+    padding:8px!important;
+  }
+  .rup-draft-status{display:none}
+}
