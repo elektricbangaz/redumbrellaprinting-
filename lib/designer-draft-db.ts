@@ -5,12 +5,29 @@ import type { PrintZoneId } from "@/lib/garment-models";
 import type { SupplyMode } from "@/lib/designer-pricing";
 import type { DecorationMethod } from "@/lib/design-document";
 import {
+  editorSideForSurface,
   surfaceStateFromLegacy,
   type DesignSurfaceId,
   type SurfaceDesignState,
 } from "@/lib/design-surfaces";
 
-export type DesignerDraft = {
+export type DesignerDraftV2 = {
+  version: 2;
+  savedAt: number;
+  productId: string;
+  productSlug?: string;
+  productName?: string;
+  color: string;
+  customColor: string;
+  size: string;
+  quantity: number;
+  activeSurfaceId: DesignSurfaceId;
+  surfaces: SurfaceDesignState;
+  supplyMode: SupplyMode;
+  decorationMethod?: DecorationMethod;
+};
+
+type DesignerDraftV1 = {
   version: 1;
   savedAt: number;
   productId: string;
@@ -29,6 +46,8 @@ export type DesignerDraft = {
   surfaces?: SurfaceDesignState;
 };
 
+export type DesignerDraft = DesignerDraftV2;
+
 const DB_NAME = "red-umbrella-design-lab";
 const DB_VERSION = 1;
 const STORE = "drafts";
@@ -46,17 +65,33 @@ function openDb() {
   });
 }
 
-export async function saveDesignerDraft(draft: DesignerDraft) {
+function migrateDraft(value: DesignerDraftV1 | DesignerDraftV2): DesignerDraftV2 {
+  if (value.version === 2) return value;
+
+  const activeSurfaceId = value.activeSurfaceId ?? value.printZoneId ?? (value.side === "back" ? "full-back" : "full-front");
+  return {
+    version: 2,
+    savedAt: value.savedAt,
+    productId: value.productId,
+    productSlug: value.productSlug,
+    productName: value.productName,
+    color: value.color,
+    customColor: value.customColor,
+    size: value.size,
+    quantity: Math.max(1, value.quantity || 1),
+    activeSurfaceId,
+    surfaces: value.surfaces ?? surfaceStateFromLegacy(value.design ?? { front: [], back: [] }),
+    supplyMode: value.supplyMode ?? "red-umbrella",
+    decorationMethod: value.decorationMethod,
+  };
+}
+
+export async function saveDesignerDraft(draft: DesignerDraftV2) {
   if (typeof indexedDB === "undefined") return;
   const db = await openDb();
-  const value: DesignerDraft = {
-    ...draft,
-    activeSurfaceId: draft.activeSurfaceId ?? draft.printZoneId,
-    surfaces: draft.surfaces ?? surfaceStateFromLegacy(draft.design),
-  };
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(value, KEY);
+    tx.objectStore(STORE).put(draft, KEY);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -64,19 +99,14 @@ export async function saveDesignerDraft(draft: DesignerDraft) {
 }
 
 export async function loadDesignerDraft() {
-  if (typeof indexedDB === "undefined") return null as DesignerDraft | null;
+  if (typeof indexedDB === "undefined") return null as DesignerDraftV2 | null;
   const db = await openDb();
-  const result = await new Promise<DesignerDraft | null>((resolve, reject) => {
+  const result = await new Promise<DesignerDraftV2 | null>((resolve, reject) => {
     const tx = db.transaction(STORE, "readonly");
     const request = tx.objectStore(STORE).get(KEY);
     request.onsuccess = () => {
-      const draft = (request.result as DesignerDraft | undefined) ?? null;
-      if (!draft) return resolve(null);
-      resolve({
-        ...draft,
-        activeSurfaceId: draft.activeSurfaceId ?? draft.printZoneId,
-        surfaces: draft.surfaces ?? surfaceStateFromLegacy(draft.design),
-      });
+      const raw = request.result as DesignerDraftV1 | DesignerDraftV2 | undefined;
+      resolve(raw ? migrateDraft(raw) : null);
     };
     request.onerror = () => reject(request.error);
   });
@@ -94,4 +124,8 @@ export async function clearDesignerDraft() {
     tx.onerror = () => reject(tx.error);
   });
   db.close();
+}
+
+export function legacySideFromDraft(draft: DesignerDraftV2): "front" | "back" {
+  return editorSideForSurface(draft.activeSurfaceId);
 }
