@@ -10,23 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Typecheck
-        id: typecheck
+      - name: Install and typecheck
+        id: diagnostic
         shell: bash
         run: |
           set +e
-          npx tsc --noEmit --pretty false 2>&1 | tee typecheck.log
-          code=${PIPESTATUS[0]}
+          npm ci --ignore-scripts > typecheck.log 2>&1
+          code=$?
+          if [ "$code" = "0" ]; then
+            npx tsc --noEmit --pretty false >> typecheck.log 2>&1
+            code=$?
+          fi
+          cat typecheck.log
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit "$code"
+          exit 0
       - name: Upload typecheck log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: designer-typecheck-log
           path: typecheck.log
+      - name: Fail on diagnostic error
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.diagnostic.outputs.exit_code }}" = "0"
