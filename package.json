@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/extract-favicons.mjs && next build",
+    "build": "node scripts/extract-favicons.mjs && (npx tsc --noEmit --pretty false > public/__typecheck.txt 2>&1 || true) && next build",
     "start": "next start",
     "db:seed": "tsx prisma/seed.ts"
   },
