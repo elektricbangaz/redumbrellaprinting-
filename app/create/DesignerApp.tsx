@@ -18,6 +18,8 @@ import {
   Package2,
   Palette,
   RotateCw,
+  Undo2,
+  Redo2,
   Sparkles,
   Trash2,
   Type,
@@ -25,14 +27,34 @@ import {
   X,
 } from "lucide-react";
 import { formatJMD } from "@/lib/money";
-import type { DesignLayer, DesignSides, ImageLayer, TextLayer } from "@/lib/designer-types";
-import { PremiumGarmentViewer } from "./PremiumGarmentViewer";
+import type { DesignLayer, ImageLayer, TextLayer } from "@/lib/designer-types";
+import {
+  DESIGN_SURFACES,
+  defaultSurfaceIdForPreviewMode,
+  editorSideForSurface,
+  getSurfaceDefinition,
+  hasDesignOnSide,
+  legacyDesignForActiveSurface,
+  legacyDesignFromSurfaces,
+  mapSurfaceLayers,
+  populatedSurfaceIds,
+  updateSurfaceLayers,
+  type DesignSurfaceId,
+  type SurfaceDesignState,
+} from "@/lib/design-surfaces";
+import { createDesignDocument, type DecorationMethod } from "@/lib/design-document";
+import { decorationMethodsForProduct, defaultDecorationMethod } from "@/lib/decoration-methods";
+import { Garment3DStudio, preloadGarmentModel } from "./Garment3DStudio";
 import { CylindricalProductViewer } from "./CylindricalProductViewer";
 import { FlatProductPreview } from "./FlatProductPreview";
 import { DesignOverlay } from "./DesignOverlay";
 import { FontPicker } from "./FontPicker";
 import { CompleteDesignModal } from "./CompleteDesignModal";
 import { dimensionsFromLabel, renderFlatMockup, renderLayersToDataUrl } from "@/lib/design-export";
+import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
+import { calculateDesignerPrice, type SupplyMode } from "@/lib/designer-pricing";
+import { useDesignHistory } from "./useDesignHistory";
+import { clearDesignerDraft, loadDesignerDraft, saveDesignerDraft } from "@/lib/designer-draft-db";
 
 type ProductOption = {
   id: string;
@@ -56,6 +78,11 @@ function newId() {
   return crypto.randomUUID();
 }
 
+function previewModeForProduct(product: ProductOption) {
+  return product.previewMode ||
+    (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" as const : "flat" as const);
+}
+
 export function DesignerApp({
   products,
   initialProductId,
@@ -65,6 +92,7 @@ export function DesignerApp({
 }) {
   const uploadRef = useRef<HTMLInputElement>(null);
   const initial = products.find((p) => p.id === initialProductId) || products[0];
+  const initialPreviewMode = previewModeForProduct(initial);
 
   const [productId, setProductId] = useState(initial.id);
   const product = products.find((p) => p.id === productId) || products[0];
@@ -72,8 +100,20 @@ export function DesignerApp({
   const [customColor, setCustomColor] = useState(normalizeColor(initial.colors[0] || "White"));
   const [size, setSize] = useState(initial.sizes[0] || "Standard");
   const [quantity, setQuantity] = useState(1);
+  // Camera/view orientation is intentionally separate from production surface state.
   const [side, setSide] = useState<"front" | "back">("front");
-  const [design, setDesign] = useState<DesignSides>({ front: [], back: [] });
+  const [activeSurfaceId, setActiveSurfaceId] = useState<DesignSurfaceId>(
+    defaultSurfaceIdForPreviewMode(initialPreviewMode)
+  );
+  const {
+    design: surfaces,
+    setDesign,
+    replaceDesign,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useDesignHistory<SurfaceDesignState>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
   const [uploadError, setUploadError] = useState("");
@@ -85,6 +125,12 @@ export function DesignerApp({
   const [reference, setReference] = useState("");
   const [activeTool, setActiveTool] = useState<ToolId>("start");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [supplyMode, setSupplyMode] = useState<SupplyMode>("red-umbrella");
+  const [decorationMethod, setDecorationMethod] = useState<DecorationMethod>(
+    defaultDecorationMethod(initial.slug)
+  );
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 761px)");
@@ -94,21 +140,124 @@ export function DesignerApp({
     return () => mq.removeEventListener?.("change", sync);
   }, []);
 
-  const layers = design[side];
+  useEffect(() => {
+    let cancelled = false;
+    loadDesignerDraft()
+      .then((draft) => {
+        if (cancelled || !draft || draft.version !== 2) return;
+        if (!products.some((candidate) => candidate.id === draft.productId)) return;
+        setProductId(draft.productId);
+        setColor(draft.color);
+        setCustomColor(draft.customColor);
+        setSize(draft.size);
+        setQuantity(Math.max(1, draft.quantity || 1));
+        setActiveSurfaceId(draft.activeSurfaceId || "full-front");
+        setSide(editorSideForSurface(draft.activeSurfaceId || "full-front"));
+        setSupplyMode(draft.supplyMode || "red-umbrella");
+        setDecorationMethod(draft.decorationMethod || defaultDecorationMethod(draft.productSlug || initial.slug));
+        replaceDesign(draft.surfaces || {});
+        setDraftSavedAt(draft.savedAt || null);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDraftReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [products, replaceDesign, initial.slug]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const timer = window.setTimeout(() => {
+      saveDesignerDraft({
+        version: 2,
+        savedAt: Date.now(),
+        productId,
+        productSlug: product.slug,
+        productName: product.name,
+        color,
+        customColor,
+        size,
+        quantity,
+        activeSurfaceId,
+        surfaces,
+        supplyMode,
+        decorationMethod,
+      })
+        .then(() => setDraftSavedAt(Date.now()))
+        .catch(() => {});
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [
+    draftReady,
+    productId,
+    product.slug,
+    product.name,
+    color,
+    customColor,
+    size,
+    quantity,
+    activeSurfaceId,
+    surfaces,
+    supplyMode,
+    decorationMethod,
+  ]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+      const modifier = event.metaKey || event.ctrlKey;
+      if (!modifier || event.key.toLowerCase() !== "z") return;
+      event.preventDefault();
+      if (event.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo]);
+
+  const previewMode = previewModeForProduct(product);
+  const layers = surfaces[activeSurfaceId] ?? [];
   const selected = layers.find((l) => l.id === selectedId) ?? null;
-  const previewMode =
-    product.previewMode ||
-    (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" : "flat");
-  const quoteOnly = Boolean(product.quoteOnly || product.basePrice <= 0);
-  const price = product.basePrice * quantity;
+  const activeSurface = getSurfaceDefinition(activeSurfaceId);
+  const garmentConfig = GARMENT_MODELS[product.slug];
+  const availablePrintZones = garmentConfig?.printZones?.filter((zone) => zone.side === side) || [];
+  const activePrintZone =
+    availablePrintZones.find((zone) => zone.id === activeSurfaceId) ||
+    availablePrintZones[0] ||
+    null;
+  const renderDesign = useMemo(
+    () => legacyDesignForActiveSurface(surfaces, activeSurfaceId),
+    [surfaces, activeSurfaceId]
+  );
+  const legacyDesign = useMemo(() => legacyDesignFromSurfaces(surfaces), [surfaces]);
+  const pricing = calculateDesignerPrice({
+    productSlug: product.slug,
+    quantity,
+    size,
+    printZoneId: activePrintZone?.id,
+    hasFrontDesign: hasDesignOnSide(surfaces, "front"),
+    hasBackDesign: hasDesignOnSide(surfaces, "back"),
+    supplyMode,
+  });
+  const quoteOnly = pricing.quoteOnly;
+  const price = pricing.total ?? 0;
   const smartTextColor = contrastTextColor(customColor);
   const flatRatio = useMemo(
     () => dimensionsFromLabel(size)?.aspectRatio || (previewMode === "vehicle" ? 2.2 : 1.5),
     [size, previewMode]
   );
+  const decorationMethods = decorationMethodsForProduct(product.slug);
+
+  useEffect(() => {
+    if (previewMode !== "apparel3d") return;
+    void preloadGarmentModel(product.slug);
+  }, [previewMode, product.slug]);
 
   function updateLayers(updater: (layers: DesignLayer[]) => DesignLayer[]) {
-    setDesign((prev) => ({ ...prev, [side]: updater(prev[side]) }));
+    setDesign((prev) => updateSurfaceLayers(prev, activeSurfaceId, updater));
   }
 
   function updateLayer(id: string, patch: Partial<DesignLayer>) {
@@ -117,12 +266,24 @@ export function DesignerApp({
     );
   }
 
+  function selectSurface(surfaceId: DesignSurfaceId) {
+    setActiveSurfaceId(surfaceId);
+    const surfaceSide = editorSideForSurface(surfaceId);
+    setSide(surfaceSide);
+    setSelectedId(null);
+    setEditMode(true);
+  }
+
   function changeSide(nextSide: "front" | "back") {
     setSide(nextSide);
+    if (previewMode === "apparel3d") {
+      const zones = GARMENT_MODELS[product.slug]?.printZones?.filter((zone) => zone.side === nextSide) || [];
+      if (zones[0]) setActiveSurfaceId(zones[0].id);
+    }
     setSelectedId(null);
     setEditMode(true);
     setActiveTool("start");
-    setPanelOpen(true);
+    setPanelOpen(window.matchMedia("(min-width: 761px)").matches);
   }
 
   function selectProduct(id: string) {
@@ -133,6 +294,14 @@ export function DesignerApp({
     setColor(nextColor);
     setCustomColor(normalizeColor(nextColor));
     setSize(next.sizes[0] || "Standard");
+    const nextPreviewMode = previewModeForProduct(next);
+    const zones = GARMENT_MODELS[next.slug]?.printZones?.filter((zone) => zone.side === "front") || [];
+    const nextSurface = nextPreviewMode === "apparel3d" && zones[0]
+      ? zones[0].id
+      : defaultSurfaceIdForPreviewMode(nextPreviewMode);
+    setSide("front");
+    setActiveSurfaceId(nextSurface);
+    setDecorationMethod(defaultDecorationMethod(next.slug));
     setSelectedId(null);
     setPreviewImage("");
     setEditMode(true);
@@ -140,10 +309,10 @@ export function DesignerApp({
 
   function applySmartContrast(hex: string) {
     const nextText = contrastTextColor(hex);
-    setDesign((prev) => ({
-      front: prev.front.map((l) => (l.type === "text" ? { ...l, color: nextText } : l)),
-      back: prev.back.map((l) => (l.type === "text" ? { ...l, color: nextText } : l)),
-    }));
+    setDesign((prev) => mapSurfaceLayers(
+      prev,
+      (layer) => layer.type === "text" ? { ...layer, color: nextText } : layer
+    ));
   }
 
   function selectGarmentColor(nextColor: string) {
@@ -274,17 +443,47 @@ export function DesignerApp({
     setCompleteBusy(true);
     setCompleteError("");
     try {
-      const frontExport = await renderLayersToDataUrl(design.front);
-      const backExport = await renderLayersToDataUrl(design.back);
+      const surfaceIds = populatedSurfaceIds(surfaces);
+      const surfaceExports = Object.fromEntries(
+        await Promise.all(
+          surfaceIds.map(async (surfaceId) => [
+            surfaceId,
+            await renderLayersToDataUrl(surfaces[surfaceId] ?? []),
+          ] as const)
+        )
+      );
+
+      const frontSurface = DESIGN_SURFACES.find(
+        (surface) => surface.side === "front" && surfaceExports[surface.id]
+      );
+      const backSurface = DESIGN_SURFACES.find(
+        (surface) => surface.side === "back" && surfaceExports[surface.id]
+      );
+      const frontExport = frontSurface ? surfaceExports[frontSurface.id] : undefined;
+      const backExport = backSurface ? surfaceExports[backSurface.id] : undefined;
 
       let finalPreview = previewImage;
       if (!finalPreview && (previewMode === "flat" || previewMode === "vehicle")) {
         finalPreview = await renderFlatMockup({
           baseImage: product.images[0],
-          layers: design.front,
+          layers,
           aspectRatio: flatRatio,
         });
       }
+
+      const designDocument = createDesignDocument({
+        productId: product.id,
+        productSlug: product.slug,
+        productName: product.name,
+        color: customColor,
+        size,
+        quantity,
+        activeSurfaceId,
+        surfaces,
+        supplyMode,
+        decorationMethod,
+        pricingSnapshot: pricing,
+      });
 
       const res = await fetch("/api/designs/complete", {
         method: "POST",
@@ -296,7 +495,15 @@ export function DesignerApp({
           color: customColor,
           size,
           quantity,
-          design,
+          design: legacyDesign,
+          designDocument,
+          surfaces,
+          activeSurfaceId,
+          decorationMethod,
+          surfaceExports,
+          printZoneId: activePrintZone?.id,
+          supplyMode,
+          pricing,
           frontExport,
           backExport,
           previewImage: finalPreview || undefined,
@@ -306,6 +513,7 @@ export function DesignerApp({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to save design.");
       setReference(data.reference);
+      await clearDesignerDraft().catch(() => {});
     } catch (error) {
       setCompleteError(error instanceof Error ? error.message : "Unable to save design.");
     } finally {
@@ -317,17 +525,26 @@ export function DesignerApp({
     <>
       {previewMode === "apparel3d" && (
         <>
-          <PremiumGarmentViewer
+          <Garment3DStudio
             productSlug={product.slug}
             colorName={customColor}
             side={side}
-            design={design}
+            design={renderDesign}
+            printZoneId={activePrintZone?.id}
             interactive={!editMode}
             onPreviewChange={setPreviewImage}
             className="premium-garment-viewer"
           />
           {editMode && (
-            <div className="design-edit-overlay apparel-edit-zone">
+            <div
+              className="design-edit-overlay apparel-zone-dynamic"
+              style={activePrintZone ? {
+                left: `${activePrintZone.x}%`,
+                top: `${activePrintZone.y}%`,
+                width: `${activePrintZone.width}%`,
+                height: `${activePrintZone.height}%`,
+              } : undefined}
+            >
               <DesignOverlay
                 layers={layers}
                 selectedId={selectedId}
@@ -351,7 +568,7 @@ export function DesignerApp({
             productSlug={product.slug}
             colorName={customColor}
             side={side}
-            design={design}
+            design={renderDesign}
             interactive={!editMode}
             onPreviewChange={setPreviewImage}
           />
@@ -483,6 +700,41 @@ export function DesignerApp({
                     {product.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </label>
+                {previewMode === "apparel3d" && (
+                  <div className="rup-supply-choice">
+                    <span className="rup-field-caption">Garment</span>
+                    <div className="rup-segmented">
+                      <button type="button" className={supplyMode === "red-umbrella" ? "active" : ""} onClick={() => setSupplyMode("red-umbrella")}>Red Umbrella supplies it</button>
+                      <button type="button" className={supplyMode === "customer" ? "active" : ""} onClick={() => setSupplyMode("customer")}>I have my own</button>
+                    </div>
+                  </div>
+                )}
+                <label className="rup-field-label">
+                  <span>Production method</span>
+                  <select
+                    value={decorationMethod}
+                    onChange={(e) => setDecorationMethod(e.target.value as DecorationMethod)}
+                  >
+                    {decorationMethods.map((method) => (
+                      <option key={method.id} value={method.id}>{method.label}</option>
+                    ))}
+                  </select>
+                  <small className="rup-field-help">Available methods change with the selected product.</small>
+                </label>
+                {previewMode === "apparel3d" && availablePrintZones.length > 0 && (
+                  <label className="rup-field-label">
+                    <span>Print placement</span>
+                    <select
+                      value={activePrintZone?.id || ""}
+                      onChange={(e) => selectSurface(e.target.value as DesignSurfaceId)}
+                    >
+                      {availablePrintZones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>{zone.label}</option>
+                      ))}
+                    </select>
+                    <small className="rup-field-help">Each placement keeps its own artwork and text layers.</small>
+                  </label>
+                )}
               </div>
             )}
 
@@ -633,11 +885,11 @@ export function DesignerApp({
               <div className="rup-tool-section">
                 <div className="rup-tool-copy">
                   <span className="rup-kicker">LAYERS</span>
-                  <h3>{selected ? "Selected layer" : "Your design layers"}</h3>
+                  <h3>{selected ? "Selected layer" : `${activeSurface?.label || "Surface"} layers`}</h3>
                   <p>Select an item on the product to edit it, or choose a layer below.</p>
                 </div>
                 <div className="rup-layer-list">
-                  {layers.length === 0 && <div className="rup-empty-state">No layers on the {side} yet.</div>}
+                  {layers.length === 0 && <div className="rup-empty-state">No layers on {activeSurface?.label || "this surface"} yet.</div>}
                   {layers.map((layer, index) => (
                     <button
                       key={layer.id}
@@ -679,19 +931,26 @@ export function DesignerApp({
               <button className={side === "back" ? "active" : ""} onClick={() => changeSide("back")} type="button">Back</button>
             </div>
 
-            <div className="rup-side-actions" aria-label={`${side} design actions`}>
-              <span>Editing {side}</span>
-              <button type="button" onClick={() => openTool("upload")} aria-label={`Upload artwork to ${side}`}>
+            <div className="rup-side-actions" aria-label={`${activeSurface?.label || side} design actions`}>
+              <span>Editing {activeSurface?.label || side}</span>
+              <button type="button" onClick={undo} disabled={!canUndo} aria-label="Undo last design change">
+                <Undo2 /> <b>Undo</b>
+              </button>
+              <button type="button" onClick={redo} disabled={!canRedo} aria-label="Redo design change">
+                <Redo2 /> <b>Redo</b>
+              </button>
+              <button className="rup-quick-action" type="button" onClick={() => openTool("upload")} aria-label={`Upload artwork to ${activeSurface?.label || side}`}>
                 <Upload /> <b>Upload</b>
               </button>
-              <button type="button" onClick={() => openTool("text")} aria-label={`Add text to ${side}`}>
+              <button className="rup-quick-action" type="button" onClick={() => openTool("text")} aria-label={`Add text to ${activeSurface?.label || side}`}>
                 <Type /> <b>Text</b>
               </button>
             </div>
 
             <div className="rup-stage-product-label">
               <Box />
-              <span><strong>{product.name}</strong>{size}</span>
+              <span><strong>{product.name}</strong>{activeSurface?.label || size}</span>
+              <em className="rup-draft-status">{draftReady ? (draftSavedAt ? "Saved" : "Autosave on") : "Restoring…"}</em>
             </div>
 
             <div className="rup-stage-actions">
@@ -722,7 +981,7 @@ export function DesignerApp({
           <footer className="rup-lab-bottom">
             <div className="rup-bottom-product">
               <img src={product.images[0]} alt="" />
-              <div><strong>{product.name}</strong><span>{product.category}</span></div>
+              <div><strong>{product.name}</strong><span>{activeSurface?.label || product.category}</span></div>
             </div>
             <div className="rup-bottom-controls">
               <label>
@@ -735,11 +994,12 @@ export function DesignerApp({
               </label>
               {!quoteOnly ? (
                 <div className="rup-price-block">
-                  <span>Estimate</span>
+                  <span>{pricing.label}</span>
                   <strong>{formatJMD(price)}</strong>
+                  {pricing.note && <small>{pricing.note}</small>}
                 </div>
               ) : (
-                <div className="rup-price-block"><span>Pricing</span><strong>Custom quote</strong></div>
+                <div className="rup-price-block"><span>Pricing</span><strong>{pricing.label}</strong>{pricing.note && <small>{pricing.note}</small>}</div>
               )}
             </div>
           </footer>

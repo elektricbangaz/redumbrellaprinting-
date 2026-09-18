@@ -2,6 +2,7 @@
 
 import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 
 const nav = [
@@ -18,6 +19,8 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const cart = useCart();
+  const pathname = usePathname();
+  const inDesigner = pathname?.startsWith("/create");
 
   return (
     <>
@@ -43,14 +46,14 @@ export function SiteHeader() {
         <div className="site2-actions">
           <button className="site2-icon" aria-label="Search products" onClick={() => setSearchOpen(v => !v)}><Search /></button>
           <button className="site2-icon site2-cart" aria-label="Open cart" onClick={cart.openCart}><ShoppingBag /><span>{cart.count}</span></button>
-          <a href="/create" className="site2-start">Start Designing <span>→</span></a>
+          {!inDesigner && <a href="/create" className="site2-start">Start Designing <span>→</span></a>}
           <button className="site2-menu" aria-label="Open menu" onClick={() => setMenuOpen(v => !v)}>{menuOpen ? <X /> : <Menu />}</button>
         </div>
 
         {menuOpen && (
           <div className="site2-mobile-menu">
             {nav.map((item) => <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>)}
-            <a className="site2-mobile-cta" href="/create">Start Designing →</a>
+            {!inDesigner && <a className="site2-mobile-cta" href="/create">Start Designing →</a>}
           </div>
         )}
       </header>
