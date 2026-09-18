@@ -191,7 +191,7 @@ if (rupPrintEnabled > 0.5) {
   return material;
 }
 
-function largestMesh(root: THREE.Object3D) {
+function largestMesh(root: THREE.Object3D): THREE.Mesh | null {
   let selected: THREE.Mesh | null = null;
   let selectedVolume = 0;
 
@@ -589,8 +589,9 @@ export function Garment3DStudio({
 
   useEffect(() => {
     const material = printMaterialRef.current;
-    const uniforms = material ? getPrintUniforms(material) : null;
-    if (!uniforms || state !== "ready") return;
+    if (!material || state !== "ready") return;
+    const uniforms = getPrintUniforms(material);
+    if (!uniforms) return;
 
     let cancelled = false;
     const frame = requestAnimationFrame(async () => {
