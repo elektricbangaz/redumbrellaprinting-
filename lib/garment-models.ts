@@ -89,7 +89,7 @@ const TEE_ZONES: PrintZoneConfig[] = [
 export const GARMENT_MODELS: Record<string, GarmentModelConfig> = {
   "standard-t-shirt": {
     slug: "standard-t-shirt",
-    modelUrl: "https://raw.githubusercontent.com/AvatarParzival/3d/main/Models/shirt.glb",
+    modelUrl: "/mockups/Tshirt.glb",
     fallbackImage: "https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Tshirt.png",
     printScale: [0.38, 0.46],
     frontOffset: 0.012,
@@ -97,6 +97,7 @@ export const GARMENT_MODELS: Record<string, GarmentModelConfig> = {
   },
   "polo-shirt": {
     slug: "polo-shirt",
+    modelUrl: "/mockups/Polo%20Tshirt.glb",
     fallbackImage: "https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Polo_Tshirt.png",
     printZones: TEE_ZONES,
   },
