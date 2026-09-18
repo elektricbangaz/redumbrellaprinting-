@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { DesignLayer, DesignSides } from "@/lib/designer-types";
+import { getPrintSurfaceLayout } from "@/lib/design-export";
 
 type Props = {
   productSlug: string;
@@ -37,16 +38,25 @@ async function loadImage(src: string) {
   });
 }
 
-async function textureCanvas(layers: DesignLayer[]) {
+async function textureCanvas(layers: DesignLayer[], surfaceKey: "front" | "back" = "front") {
   const canvas = document.createElement("canvas");
   canvas.width = 1800;
   canvas.height = 900;
   const ctx = canvas.getContext("2d")!;
+  const surface = getPrintSurfaceLayout(surfaceKey);
+  const region = {
+    x: (surface.xPct / 100) * canvas.width,
+    y: (surface.yPct / 100) * canvas.height,
+    w: (surface.widthPct / 100) * canvas.width,
+    h: (surface.heightPct / 100) * canvas.height,
+  };
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (const layer of layers) {
     ctx.save();
-    ctx.translate((layer.x / 100) * canvas.width, (layer.y / 100) * canvas.height);
+    const localX = region.x + (((layer.x / 100) * region.w) - region.w / 2);
+    const localY = region.y + (((layer.y / 100) * region.h) - region.h / 2);
+    ctx.translate(localX, localY);
     ctx.rotate((layer.rotation * Math.PI) / 180);
     if (layer.type === "text") {
       try { await document.fonts.load(`${layer.bold ? 800 : 500} ${layer.fontSize}px "${layer.fontFamily}"`); } catch {}
@@ -55,12 +65,12 @@ async function textureCanvas(layers: DesignLayer[]) {
       ctx.fillStyle = layer.color;
       ctx.textAlign = layer.align;
       ctx.textBaseline = "middle";
-      const maxWidth = ((layer.widthPct ?? 38) / 100) * canvas.width;
+      const maxWidth = ((layer.widthPct ?? 38) / 100) * region.w;
       ctx.fillText(layer.content, 0, 0, maxWidth);
     } else {
       const img = await loadImage(layer.src);
       if (img) {
-        const w = (layer.widthPct / 100) * canvas.width;
+        const w = (layer.widthPct / 100) * region.w;
         const h = w * (img.naturalHeight / Math.max(1, img.naturalWidth));
         ctx.drawImage(img, -w / 2, -h / 2, w, h);
       }
@@ -167,7 +177,7 @@ export function CylindricalProductViewer({
     let printMat: THREE.MeshBasicMaterial | null = null;
     let printShell: THREE.Mesh | null = null;
 
-    textureCanvas(design[side]).then((canvas) => {
+    textureCanvas(design[side] ?? [], side).then((canvas) => {
       if (disposed) return;
       tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
