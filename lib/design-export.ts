@@ -10,7 +10,7 @@ async function loadImage(src: string) {
   });
 }
 
-export async function renderLayersToDataUrl(
+export async function renderLayersToCanvas(
   layers: DesignLayer[],
   {
     width = 1800,
@@ -91,6 +91,15 @@ export async function renderLayersToDataUrl(
     ctx.restore();
   }
 
+  return canvas;
+}
+
+
+export async function renderLayersToDataUrl(
+  layers: DesignLayer[],
+  options: { width?: number; height?: number; background?: string } = {}
+) {
+  const canvas = await renderLayersToCanvas(layers, options);
   return canvas.toDataURL("image/png");
 }
 
