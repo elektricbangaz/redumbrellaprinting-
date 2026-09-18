@@ -24,12 +24,12 @@ type Props = {
 };
 
 type SurfacePrintUniforms = {
-  map: { value: THREE.Texture };
-  enabled: { value: number };
-  zoneMin: { value: THREE.Vector2 };
-  zoneMax: { value: THREE.Vector2 };
-  sideSign: { value: number };
-  normalThreshold: { value: number };
+  map: THREE.IUniform<THREE.Texture>;
+  enabled: THREE.IUniform<number>;
+  zoneMin: THREE.IUniform<THREE.Vector2>;
+  zoneMax: THREE.IUniform<THREE.Vector2>;
+  sideSign: THREE.IUniform<number>;
+  normalThreshold: THREE.IUniform<number>;
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -122,7 +122,7 @@ function createPrintableGarmentMaterial(colorName: string) {
   material.userData.rupPrintUniforms = uniforms;
   material.userData.rupTransparentTexture = transparentTexture;
 
-  material.onBeforeCompile = (shader) => {
+  material.onBeforeCompile = (shader: THREE.WebGLProgramParametersWithUniforms) => {
     shader.uniforms.rupPrintMap = uniforms.map;
     shader.uniforms.rupPrintEnabled = uniforms.enabled;
     shader.uniforms.rupZoneMin = uniforms.zoneMin;
