@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { DesignLayer, DesignSides } from "@/lib/designer-types";
+import type { DesignSides } from "@/lib/designer-types";
+import { renderLayersToCanvas } from "@/lib/design-export";
 import {
   GARMENT_MODELS,
   type GarmentModelConfig,
@@ -22,9 +23,13 @@ type Props = {
   onPreviewChange?: (dataUrl: string) => void;
 };
 
-type PrintSurface = {
-  mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
-  material: THREE.MeshBasicMaterial;
+type SurfacePrintUniforms = {
+  map: { value: THREE.Texture };
+  enabled: { value: number };
+  zoneMin: { value: THREE.Vector2 };
+  zoneMax: { value: THREE.Vector2 };
+  sideSign: { value: number };
+  normalThreshold: { value: number };
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -38,7 +43,6 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 const MODEL_CACHE = new Map<string, Promise<THREE.Object3D>>();
-const IMAGE_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
 
 function getHex(name: string) {
   return name.startsWith("#") ? name : (COLOR_MAP[name] || "#d8d8d4");
@@ -69,110 +73,6 @@ export function preloadGarmentModel(productSlug: string) {
   return loadGarmentTemplate(url).then(() => null).catch(() => null);
 }
 
-function loadImage(src: string) {
-  const existing = IMAGE_CACHE.get(src);
-  if (existing) return existing;
-
-  const pending = new Promise<HTMLImageElement | null>((resolve) => {
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => resolve(image);
-    image.onerror = () => resolve(null);
-    image.src = src;
-  });
-  IMAGE_CACHE.set(src, pending);
-  return pending;
-}
-
-async function renderDesignTexture(layers: DesignLayer[]) {
-  const mobile = typeof window !== "undefined" && window.innerWidth <= 760;
-  const canvas = document.createElement("canvas");
-  canvas.width = mobile ? 900 : 1400;
-  canvas.height = mobile ? 1080 : 1680;
-
-  const context = canvas.getContext("2d", { alpha: true });
-  if (!context) return canvas;
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (const layer of layers) {
-    context.save();
-    context.translate((layer.x / 100) * canvas.width, (layer.y / 100) * canvas.height);
-    context.rotate((layer.rotation * Math.PI) / 180);
-
-    if (layer.type === "text") {
-      const weight = layer.bold ? 800 : 500;
-      try {
-        await document.fonts.load(`${weight} ${layer.fontSize}px "${layer.fontFamily}"`);
-      } catch {}
-
-      const fontPx = Math.max(24, layer.fontSize * (mobile ? 2.35 : 3.1));
-      context.font = `${layer.italic ? "italic " : ""}${weight} ${fontPx}px "${layer.fontFamily}", sans-serif`;
-      context.fillStyle = layer.color;
-      context.textAlign = layer.align;
-      context.textBaseline = "middle";
-
-      const maxWidth = ((layer.widthPct ?? 42) / 100) * canvas.width;
-      const lines: string[] = [];
-
-      for (const paragraph of layer.content.split(/\n/)) {
-        const words = paragraph.split(/\s+/).filter(Boolean);
-        let line = "";
-
-        for (const word of words) {
-          const chunks: string[] = [];
-          if (context.measureText(word).width > maxWidth) {
-            let chunk = "";
-            for (const character of word) {
-              const next = chunk + character;
-              if (context.measureText(next).width > maxWidth && chunk) {
-                chunks.push(chunk);
-                chunk = character;
-              } else {
-                chunk = next;
-              }
-            }
-            if (chunk) chunks.push(chunk);
-          } else {
-            chunks.push(word);
-          }
-
-          for (const chunk of chunks) {
-            const next = line ? `${line} ${chunk}` : chunk;
-            if (context.measureText(next).width > maxWidth && line) {
-              lines.push(line);
-              line = chunk;
-            } else {
-              line = next;
-            }
-          }
-        }
-
-        if (line) lines.push(line);
-        if (!words.length) lines.push("");
-      }
-
-      const lineHeight = fontPx * 1.08;
-      const startY = -((lines.length - 1) * lineHeight) / 2;
-      lines.forEach((line, index) => {
-        context.fillText(line, 0, startY + index * lineHeight, maxWidth);
-      });
-    } else {
-      const image = await loadImage(layer.src);
-      if (image) {
-        const width = (layer.widthPct / 100) * canvas.width;
-        const ratio = image.naturalHeight / Math.max(1, image.naturalWidth);
-        const height = width * ratio;
-        context.drawImage(image, -width / 2, -height / 2, width, height);
-      }
-    }
-
-    context.restore();
-  }
-
-  return canvas;
-}
-
 function createGarmentMaterial(colorName: string) {
   return new THREE.MeshPhysicalMaterial({
     color: new THREE.Color(getHex(colorName)),
@@ -182,6 +82,113 @@ function createGarmentMaterial(colorName: string) {
     sheenColor: new THREE.Color("#ffffff"),
     sheenRoughness: 0.78,
   });
+}
+
+function createTransparentTexture() {
+  const texture = new THREE.DataTexture(
+    new Uint8Array([0, 0, 0, 0]),
+    1,
+    1,
+    THREE.RGBAFormat
+  );
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * The print is blended directly into the garment material.
+ *
+ * This intentionally removes the old secondary/decal mesh. A separate mesh can
+ * intersect the shirt, float off the cloth, or fragment around folds. Here the
+ * same shirt triangles are shaded once and the design texture is projected in
+ * garment-local coordinates, so the print always follows the garment surface.
+ *
+ * The model can later provide authored UV regions without changing the design
+ * state or compositor contract.
+ */
+function createPrintableGarmentMaterial(colorName: string) {
+  const material = createGarmentMaterial(colorName);
+  const transparentTexture = createTransparentTexture();
+
+  const uniforms: SurfacePrintUniforms = {
+    map: { value: transparentTexture },
+    enabled: { value: 0 },
+    zoneMin: { value: new THREE.Vector2(-0.5, -0.5) },
+    zoneMax: { value: new THREE.Vector2(0.5, 0.5) },
+    sideSign: { value: 1 },
+    normalThreshold: { value: 0.14 },
+  };
+
+  material.userData.rupPrintUniforms = uniforms;
+  material.userData.rupTransparentTexture = transparentTexture;
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.rupPrintMap = uniforms.map;
+    shader.uniforms.rupPrintEnabled = uniforms.enabled;
+    shader.uniforms.rupZoneMin = uniforms.zoneMin;
+    shader.uniforms.rupZoneMax = uniforms.zoneMax;
+    shader.uniforms.rupSideSign = uniforms.sideSign;
+    shader.uniforms.rupNormalThreshold = uniforms.normalThreshold;
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+varying vec3 vRupObjectPosition;
+varying vec3 vRupObjectNormal;`
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+vRupObjectPosition = position;
+vRupObjectNormal = normal;`
+      );
+
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+uniform sampler2D rupPrintMap;
+uniform float rupPrintEnabled;
+uniform vec2 rupZoneMin;
+uniform vec2 rupZoneMax;
+uniform float rupSideSign;
+uniform float rupNormalThreshold;
+varying vec3 vRupObjectPosition;
+varying vec3 vRupObjectNormal;`
+      )
+      .replace(
+        "#include <map_fragment>",
+        `#include <map_fragment>
+
+if (rupPrintEnabled > 0.5) {
+  vec2 rupZoneSize = max(rupZoneMax - rupZoneMin, vec2(0.0001));
+  vec2 rupUv = vec2(
+    (vRupObjectPosition.x - rupZoneMin.x) / rupZoneSize.x,
+    1.0 - ((vRupObjectPosition.y - rupZoneMin.y) / rupZoneSize.y)
+  );
+
+  float rupInside =
+    step(0.0, rupUv.x) *
+    step(rupUv.x, 1.0) *
+    step(0.0, rupUv.y) *
+    step(rupUv.y, 1.0);
+
+  float rupFacing = step(
+    rupNormalThreshold,
+    normalize(vRupObjectNormal).z * rupSideSign
+  );
+
+  if (rupInside * rupFacing > 0.5) {
+    vec4 rupPrint = texture2D(rupPrintMap, rupUv);
+    diffuseColor.rgb = mix(diffuseColor.rgb, rupPrint.rgb, rupPrint.a);
+  }
+}`
+      );
+  };
+
+  material.customProgramCacheKey = () => "red-umbrella-surface-print-v2";
+  return material;
 }
 
 function largestMesh(root: THREE.Object3D) {
@@ -205,61 +212,31 @@ function largestMesh(root: THREE.Object3D) {
   return selected;
 }
 
-function worldFaceNormal(hit: THREE.Intersection<THREE.Object3D>) {
-  const face = hit.face;
-  if (!face) return null;
-  const mesh = hit.object as THREE.Mesh;
-  return face.normal.clone().transformDirection(mesh.matrixWorld).normalize();
+function getPrintUniforms(material: THREE.Material | null) {
+  if (!material) return null;
+  return (material.userData.rupPrintUniforms || null) as SurfacePrintUniforms | null;
 }
 
-function chooseSurfaceHit(
-  hits: THREE.Intersection<THREE.Object3D>[],
-  side: "front" | "back"
-) {
-  const wantedSign = side === "front" ? 1 : -1;
-  return hits.find((hit) => {
-    const normal = worldFaceNormal(hit);
-    if (!normal) return false;
-    return normal.z * wantedSign > 0.16;
-  }) || null;
-}
-
-/**
- * Build a dedicated UV grid that is ray-cast onto the actual garment surface.
- *
- * The artwork never shares garment triangles and is never projected by screen
- * coordinates in the shader. Each grid vertex is physically snapped to the
- * visible cloth surface, so the print follows folds and rotates with the shirt
- * without leaking onto the collar, back face, or unrelated mesh regions.
- */
-function createConformalPrintSurface({
-  root,
+function configureSurfaceMapping({
   target,
+  material,
   config,
   printZoneId,
   side,
-  mobile,
 }: {
-  root: THREE.Object3D;
   target: THREE.Mesh;
+  material: THREE.Material;
   config: GarmentModelConfig;
   printZoneId?: PrintZoneId;
   side: "front" | "back";
-  mobile: boolean;
-}): PrintSurface | null {
-  const originalRotationY = root.rotation.y;
-  root.rotation.y = 0;
-  root.updateMatrixWorld(true);
-  target.updateMatrixWorld(true);
+}) {
+  target.geometry.computeBoundingBox();
+  const box = target.geometry.boundingBox;
+  const uniforms = getPrintUniforms(material);
+  if (!box || !uniforms) return;
 
-  const box = new THREE.Box3().setFromObject(target);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  if (size.x <= 0 || size.y <= 0 || size.z <= 0) {
-    root.rotation.y = originalRotationY;
-    root.updateMatrixWorld(true);
-    return null;
-  }
 
   const zone =
     config.printZones?.find((candidate) => candidate.id === printZoneId && candidate.side === side) ||
@@ -267,103 +244,21 @@ function createConformalPrintSurface({
 
   const zoneScale = zone?.projectionScale || config.printScale || [0.36, 0.42];
   const zoneOffset = zone?.projectionOffset || [0, -0.07];
+
   const zoneWidth = size.x * zoneScale[0];
   const zoneHeight = size.y * zoneScale[1];
   const zoneCenterX = center.x + size.x * zoneOffset[0];
   const zoneCenterY = center.y + size.y * zoneOffset[1];
 
-  const columns = mobile ? 28 : 44;
-  const rows = mobile ? 34 : 54;
-  const vertexCount = (columns + 1) * (rows + 1);
-  const positions = new Float32Array(vertexCount * 3);
-  const uvs = new Float32Array(vertexCount * 2);
-  const valid = new Uint8Array(vertexCount);
-  const raycaster = new THREE.Raycaster();
-  const direction = new THREE.Vector3(0, 0, side === "front" ? -1 : 1);
-  const castDistance = Math.max(0.5, size.z * 2.5);
-  const originZ = side === "front" ? box.max.z + castDistance : box.min.z - castDistance;
-  const epsilon = Math.max(0.0015, Math.min(size.x, size.y) * 0.0012);
-
-  for (let row = 0; row <= rows; row += 1) {
-    const v = row / rows;
-    const worldY = zoneCenterY + zoneHeight * (0.5 - v);
-
-    for (let column = 0; column <= columns; column += 1) {
-      const u = column / columns;
-      const worldX = zoneCenterX + zoneWidth * (u - 0.5);
-      const index = row * (columns + 1) + column;
-
-      raycaster.set(new THREE.Vector3(worldX, worldY, originZ), direction);
-      raycaster.far = castDistance * 2.2;
-      const hit = chooseSurfaceHit(raycaster.intersectObject(target, false), side);
-
-      uvs[index * 2] = u;
-      uvs[index * 2 + 1] = 1 - v;
-
-      if (!hit) {
-        const placeholder = root.worldToLocal(new THREE.Vector3(worldX, worldY, center.z));
-        positions[index * 3] = placeholder.x;
-        positions[index * 3 + 1] = placeholder.y;
-        positions[index * 3 + 2] = placeholder.z;
-        continue;
-      }
-
-      const normal = worldFaceNormal(hit);
-      const point = hit.point.clone();
-      if (normal) point.addScaledVector(normal, epsilon);
-      const localPoint = root.worldToLocal(point);
-
-      positions[index * 3] = localPoint.x;
-      positions[index * 3 + 1] = localPoint.y;
-      positions[index * 3 + 2] = localPoint.z;
-      valid[index] = 1;
-    }
-  }
-
-  const indices: number[] = [];
-  for (let row = 0; row < rows; row += 1) {
-    for (let column = 0; column < columns; column += 1) {
-      const a = row * (columns + 1) + column;
-      const b = a + 1;
-      const c = a + (columns + 1);
-      const d = c + 1;
-
-      if (valid[a] && valid[b] && valid[c]) indices.push(a, c, b);
-      if (valid[b] && valid[c] && valid[d]) indices.push(b, c, d);
-    }
-  }
-
-  root.rotation.y = originalRotationY;
-  root.updateMatrixWorld(true);
-
-  if (!indices.length) return null;
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-
-  const material = new THREE.MeshBasicMaterial({
-    transparent: true,
-    opacity: 1,
-    alphaTest: 0.002,
-    depthTest: true,
-    depthWrite: false,
-    toneMapped: false,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  });
-
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = "red-umbrella-conformal-print-surface";
-  mesh.userData.redUmbrellaPrintSurface = true;
-  mesh.frustumCulled = false;
-  mesh.renderOrder = 20;
-
-  return { mesh, material };
+  uniforms.zoneMin.value.set(
+    zoneCenterX - zoneWidth / 2,
+    zoneCenterY - zoneHeight / 2
+  );
+  uniforms.zoneMax.value.set(
+    zoneCenterX + zoneWidth / 2,
+    zoneCenterY + zoneHeight / 2
+  );
+  uniforms.sideSign.value = side === "front" ? 1 : -1;
 }
 
 export function Garment3DStudio({
@@ -383,11 +278,11 @@ export function Garment3DStudio({
   const controlsRef = useRef<OrbitControls | null>(null);
   const garmentRef = useRef<THREE.Object3D | null>(null);
   const garmentMeshRef = useRef<THREE.Mesh | null>(null);
-  const printSurfaceRef = useRef<PrintSurface | null>(null);
+  const printMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const textureRef = useRef<THREE.CanvasTexture | null>(null);
   const floorRef = useRef<THREE.Mesh | null>(null);
-  const config = GARMENT_MODELS[productSlug];
 
+  const config = GARMENT_MODELS[productSlug];
   const [state, setState] = useState<"loading" | "ready" | "fallback">("loading");
   const [hasRendered, setHasRendered] = useState(false);
 
@@ -423,7 +318,11 @@ export function Garment3DStudio({
     const fitWidth = size.x / Math.max(0.01, 2 * Math.tan(horizontalFov / 2));
     const distance = Math.max(fitHeight, fitWidth) * 1.18;
 
-    camera.position.set(center.x, center.y + size.y * 0.02, center.z + Math.max(3.4, distance));
+    camera.position.set(
+      center.x,
+      center.y + size.y * 0.02,
+      center.z + Math.max(3.4, distance)
+    );
     camera.near = Math.max(0.01, distance / 100);
     camera.far = Math.max(100, distance * 20);
     camera.updateProjectionMatrix();
@@ -436,40 +335,19 @@ export function Garment3DStudio({
     }
   };
 
-  const disposePrintSurface = () => {
-    const surface = printSurfaceRef.current;
-    if (!surface) return;
-    garmentRef.current?.remove(surface.mesh);
-    surface.mesh.geometry.dispose();
-    surface.material.dispose();
-    printSurfaceRef.current = null;
-  };
-
-  const rebuildPrintSurface = () => {
+  const updateSurfaceMapping = () => {
     const root = garmentRef.current;
     const target = garmentMeshRef.current;
-    if (!root || !target || !config) return;
+    const material = printMaterialRef.current;
+    if (!root || !target || !material || !config) return;
 
-    disposePrintSurface();
-
-    const mobile = typeof window !== "undefined" && window.innerWidth <= 760;
-    const surface = createConformalPrintSurface({
-      root,
+    configureSurfaceMapping({
       target,
+      material,
       config,
       printZoneId,
       side,
-      mobile,
     });
-
-    if (surface) {
-      root.add(surface.mesh);
-      if (textureRef.current) {
-        surface.material.map = textureRef.current;
-        surface.material.needsUpdate = true;
-      }
-      printSurfaceRef.current = surface;
-    }
 
     root.rotation.y = side === "back" ? Math.PI : 0;
     root.updateMatrixWorld(true);
@@ -574,19 +452,28 @@ export function Garment3DStudio({
         if (disposed) return;
 
         const root = cloneGarmentTemplate(template);
+
         root.traverse((object) => {
           if (!(object instanceof THREE.Mesh)) return;
           object.castShadow = true;
           object.receiveShadow = true;
           object.frustumCulled = false;
-          const oldMaterials = Array.isArray(object.material) ? object.material : [object.material];
+
+          const oldMaterials = Array.isArray(object.material)
+            ? object.material
+            : [object.material];
+
           object.material = createGarmentMaterial(colorName);
           oldMaterials.forEach((material) => material.dispose());
         });
 
         const initialBox = new THREE.Box3().setFromObject(root);
         const initialSize = initialBox.getSize(new THREE.Vector3());
-        const maxDimension = Math.max(initialSize.x, initialSize.y, initialSize.z) || 1;
+        const maxDimension = Math.max(
+          initialSize.x,
+          initialSize.y,
+          initialSize.z
+        ) || 1;
         root.scale.setScalar(3.15 / maxDimension);
 
         const scaledBox = new THREE.Box3().setFromObject(root);
@@ -598,9 +485,20 @@ export function Garment3DStudio({
         const printableMesh = largestMesh(root);
         garmentMeshRef.current = printableMesh;
 
+        if (printableMesh) {
+          const materials = Array.isArray(printableMesh.material)
+            ? printableMesh.material
+            : [printableMesh.material];
+          materials.forEach((material) => material.dispose());
+
+          const printMaterial = createPrintableGarmentMaterial(colorName);
+          printableMesh.material = printMaterial;
+          printMaterialRef.current = printMaterial;
+        }
+
         scene.add(root);
         garmentRef.current = root;
-        rebuildPrintSurface();
+        updateSurfaceMapping();
 
         resize();
         setState("ready");
@@ -633,8 +531,8 @@ export function Garment3DStudio({
       cancelAnimationFrame(readyFrame);
       observer.disconnect();
       controls.dispose();
+
       textureRef.current?.dispose();
-      disposePrintSurface();
       rootDispose(garmentRef.current);
       floor.geometry.dispose();
       (floor.material as THREE.Material).dispose();
@@ -647,12 +545,13 @@ export function Garment3DStudio({
       controlsRef.current = null;
       garmentRef.current = null;
       garmentMeshRef.current = null;
+      printMaterialRef.current = null;
       textureRef.current = null;
       floorRef.current = null;
     };
-  // The model scene is intentionally created only when the product model changes.
-  // Artwork, colour and placement update against the existing scene.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // The GLB scene is created only when the product model changes.
+    // Artwork, colour and placement update against the live material.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config?.modelUrl, productSlug]);
 
   useEffect(() => {
@@ -662,8 +561,10 @@ export function Garment3DStudio({
     const next = new THREE.Color(getHex(colorName));
     root.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
-      if (object.userData.redUmbrellaPrintSurface) return;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      const materials = Array.isArray(object.material)
+        ? object.material
+        : [object.material];
+
       materials.forEach((material) => {
         if ("color" in material && (material as THREE.MeshStandardMaterial).color) {
           (material as THREE.MeshStandardMaterial).color.copy(next);
@@ -677,9 +578,9 @@ export function Garment3DStudio({
 
   useEffect(() => {
     if (state !== "ready") return;
-    rebuildPrintSurface();
-  // Rebuild only the conformal print grid, never the garment GLB.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    updateSurfaceMapping();
+    // Surface changes remap uniforms only. The garment model is never rebuilt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side, printZoneId, state]);
 
   useEffect(() => {
@@ -687,24 +588,29 @@ export function Garment3DStudio({
   }, [interactive]);
 
   useEffect(() => {
-    const surface = printSurfaceRef.current;
-    if (!surface || state !== "ready") return;
+    const material = printMaterialRef.current;
+    const uniforms = material ? getPrintUniforms(material) : null;
+    if (!uniforms || state !== "ready") return;
 
     let cancelled = false;
     const frame = requestAnimationFrame(async () => {
       const layers = design[side];
 
       if (!layers.length) {
+        uniforms.enabled.value = 0;
         const previous = textureRef.current;
         textureRef.current = null;
-        surface.material.map = null;
-        surface.material.needsUpdate = true;
+        uniforms.map.value = material.userData.rupTransparentTexture;
         previous?.dispose();
         capture();
         return;
       }
 
-      const canvas = await renderDesignTexture(layers);
+      const mobile = typeof window !== "undefined" && window.innerWidth <= 760;
+      const canvas = await renderLayersToCanvas(layers, {
+        width: mobile ? 900 : 1400,
+        height: mobile ? 1080 : 1680,
+      });
       if (cancelled) return;
 
       const texture = new THREE.CanvasTexture(canvas);
@@ -713,14 +619,16 @@ export function Garment3DStudio({
       texture.wrapT = THREE.ClampToEdgeWrapping;
       texture.minFilter = THREE.LinearMipmapLinearFilter;
       texture.magFilter = THREE.LinearFilter;
-      texture.anisotropy = rendererRef.current?.capabilities.getMaxAnisotropy() || 1;
+      texture.anisotropy =
+        rendererRef.current?.capabilities.getMaxAnisotropy() || 1;
       texture.needsUpdate = true;
 
       const previous = textureRef.current;
       textureRef.current = texture;
-      surface.material.map = texture;
-      surface.material.needsUpdate = true;
+      uniforms.map.value = texture;
+      uniforms.enabled.value = 1;
       previous?.dispose();
+
       capture();
     });
 
@@ -730,7 +638,8 @@ export function Garment3DStudio({
     };
   }, [design, side, state, printZoneId]);
 
-  const fallbackImage = config?.fallbackImage || "/mockups/plain-white-shirt.webp";
+  const fallbackImage =
+    config?.fallbackImage || "/mockups/plain-white-shirt.webp";
 
   return (
     <div className={className || "premium-garment-viewer"}>
@@ -756,8 +665,16 @@ export function Garment3DStudio({
 function rootDispose(root: THREE.Object3D | null) {
   root?.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
+
     object.geometry?.dispose?.();
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    materials.forEach((material) => material?.dispose?.());
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+    materials.forEach((material) => {
+      (material.userData.rupTransparentTexture as THREE.Texture | undefined)
+        ?.dispose?.();
+      material?.dispose?.();
+    });
   });
 }
