@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feat/create-studio-premium-v4
+  pull_request:
+    branches:
+      - main
 
 jobs:
   typecheck:
