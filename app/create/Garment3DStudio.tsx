@@ -40,6 +40,15 @@ const COLOR_MAP: Record<string, string> = {
 const MODEL_CACHE = new Map<string, Promise<THREE.Object3D>>();
 const IMAGE_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
 
+function canUseHeavyGarmentPreview() {
+  if (typeof window === "undefined") return false;
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (connection?.saveData) return false;
+  const effectiveType = connection?.effectiveType;
+  if (effectiveType && ["slow-2g", "2g", "3g"].includes(effectiveType)) return false;
+  return true;
+}
+
 function getHex(name: string) {
   return name.startsWith("#") ? name : (COLOR_MAP[name] || "#d8d8d4");
 }
@@ -65,8 +74,21 @@ function cloneGarmentTemplate(template: THREE.Object3D) {
 
 export function preloadGarmentModel(productSlug: string) {
   const url = GARMENT_MODELS[productSlug]?.modelUrl;
-  if (!url) return Promise.resolve(null);
-  return loadGarmentTemplate(url).then(() => null).catch(() => null);
+  if (!url || !canUseHeavyGarmentPreview()) return Promise.resolve(null);
+
+  const run = () => loadGarmentTemplate(url).then(() => null).catch(() => null);
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+    return new Promise((resolve) => {
+      const idle = window.requestIdleCallback(() => resolve(run()));
+      return idle;
+    });
+  }
+
+  return new Promise((resolve) => {
+    window.setTimeout(() => {
+      resolve(run());
+    }, 250);
+  });
 }
 
 function loadImage(src: string) {
@@ -481,14 +503,19 @@ export function Garment3DStudio({
     const container = mountRef.current;
     if (!container) return;
 
+    const modelUrl = config?.modelUrl;
+    if (!modelUrl || !canUseHeavyGarmentPreview()) {
+      setState("fallback");
+      return;
+    }
+
     let disposed = false;
     let animationFrame = 0;
     let readyFrame = 0;
 
     container.innerHTML = "";
     setHasRendered(false);
-    setState(config?.modelUrl ? "loading" : "fallback");
-    if (!config?.modelUrl) return;
+    setState("loading");
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#f4f4f2");
@@ -569,7 +596,8 @@ export function Garment3DStudio({
     observer.observe(container);
     resize();
 
-    void loadGarmentTemplate(config.modelUrl)
+    const scheduledLoad = window.setTimeout(() => {
+      void loadGarmentTemplate(modelUrl)
       .then((template) => {
         if (disposed) return;
 
@@ -619,6 +647,7 @@ export function Garment3DStudio({
       .catch(() => {
         if (!disposed) setState("fallback");
       });
+    }, 180);
 
     const animate = () => {
       animationFrame = requestAnimationFrame(animate);
@@ -631,6 +660,7 @@ export function Garment3DStudio({
       disposed = true;
       cancelAnimationFrame(animationFrame);
       cancelAnimationFrame(readyFrame);
+      clearTimeout(scheduledLoad);
       observer.disconnect();
       controls.dispose();
       textureRef.current?.dispose();
