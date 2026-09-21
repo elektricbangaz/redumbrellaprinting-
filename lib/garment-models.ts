@@ -89,16 +89,14 @@ const TEE_ZONES: PrintZoneConfig[] = [
 export const GARMENT_MODELS: Record<string, GarmentModelConfig> = {
   "standard-t-shirt": {
     slug: "standard-t-shirt",
-    modelUrl: "/mockups/Tshirt.glb",
-    fallbackImage: "https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Tshirt.png",
+    fallbackImage: "/mockups/plain-white-shirt.webp",
     printScale: [0.38, 0.46],
     frontOffset: 0.012,
     printZones: TEE_ZONES,
   },
   "polo-shirt": {
     slug: "polo-shirt",
-    modelUrl: "/mockups/Polo%20Tshirt.glb",
-    fallbackImage: "https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Polo_Tshirt.png",
+    fallbackImage: "/mockups/plain-white-shirt.webp",
     printZones: TEE_ZONES,
   },
   "pullover-hoodie": {
