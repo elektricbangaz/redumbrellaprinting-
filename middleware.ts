@@ -3,52 +3,53 @@ import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
 
 const adminHosts = new Set(["admin.redumbrellaprinting.com", "www.admin.redumbrellaprinting.com"]);
+const adminRoutes = ["/login", "/orders", "/work-orders", "/purchase-orders", "/broadcasts"];
 const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {
-  const url = request.nextUrl;
-  const pathname = url.pathname;
-  const isAdminHost = adminHosts.has(url.hostname.toLowerCase());
+  const pathname = request.nextUrl.pathname;
+  const requestHost = request.headers.get("host")?.split(":")[0].toLowerCase();
+  const isAdminHost = requestHost !== undefined && adminHosts.has(requestHost);
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminApi = pathname === "/api/admin" || pathname.startsWith("/api/admin/");
   const isAuthApi = pathname === "/api/auth" || pathname.startsWith("/api/auth/");
+  const isCleanAdminRoute = adminRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
+  const external = new URL(request.url);
+  if (request.headers.get("host")) external.host = request.headers.get("host")!;
 
-  // A public hostname must never serve the internal admin tree or its APIs.
   if (!isAdminHost) {
-    if (isAdminPath || isAdminApi || isAuthApi) {
+    if (isAdminPath || isAdminApi || isAuthApi || isCleanAdminRoute) {
       return new NextResponse(null, { status: 404 });
     }
     return NextResponse.next();
   }
 
-  // Keep the admin tree internal even when an old /admin URL is requested.
   if (isAdminPath) {
-    const clean = url.clone();
+    const clean = new URL(external);
     clean.pathname = pathname.slice("/admin".length) || "/";
     return NextResponse.redirect(clean);
   }
 
   if (isAuthApi) return NextResponse.next();
+  if (pathname !== "/" && !isCleanAdminRoute && !isAdminApi) {
+    return new NextResponse(null, { status: 404 });
+  }
 
-  const isLogin = pathname === "/login";
-  if (!request.auth?.user && !isLogin) {
-    const login = url.clone();
+  if (!request.auth?.user && pathname !== "/login") {
+    const login = new URL(external);
     login.pathname = "/login";
     login.search = "";
     return NextResponse.redirect(login);
   }
-  if (request.auth?.user && isLogin) {
-    const orders = url.clone();
+
+  if (request.auth?.user && (pathname === "/" || pathname === "/login")) {
+    const orders = new URL(external);
     orders.pathname = "/orders";
     orders.search = "";
     return NextResponse.redirect(orders);
   }
 
-  if (isAdminApi) return NextResponse.next();
-
-  const internal = url.clone();
-  internal.pathname = "/admin" + (pathname === "/" ? "" : pathname);
-  return NextResponse.rewrite(internal);
+  return NextResponse.next();
 });
 
 export const config = {
