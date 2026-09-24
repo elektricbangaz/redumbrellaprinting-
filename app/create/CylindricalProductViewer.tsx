@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { DesignLayer, DesignSides } from "@/lib/designer-types";
-import { getPrintSurfaceLayout } from "@/lib/design-export";
 
 type Props = {
   productSlug: string;
@@ -38,17 +37,18 @@ async function loadImage(src: string) {
   });
 }
 
-async function textureCanvas(layers: DesignLayer[], surfaceKey: "front" | "back" = "front") {
+async function textureCanvas(layers: DesignLayer[]) {
   const canvas = document.createElement("canvas");
   canvas.width = 1800;
   canvas.height = 900;
   const ctx = canvas.getContext("2d")!;
-  const surface = getPrintSurfaceLayout(surfaceKey);
+  // The active front/back design occupies the full cylindrical wrap canvas.
+  // Its layer coordinates are percentages relative to this centered region.
   const region = {
-    x: (surface.xPct / 100) * canvas.width,
-    y: (surface.yPct / 100) * canvas.height,
-    w: (surface.widthPct / 100) * canvas.width,
-    h: (surface.heightPct / 100) * canvas.height,
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    w: canvas.width,
+    h: canvas.height,
   };
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -177,7 +177,7 @@ export function CylindricalProductViewer({
     let printMat: THREE.MeshBasicMaterial | null = null;
     let printShell: THREE.Mesh | null = null;
 
-    textureCanvas(design[side] ?? [], side).then((canvas) => {
+    textureCanvas(design[side] ?? []).then((canvas) => {
       if (disposed) return;
       tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
