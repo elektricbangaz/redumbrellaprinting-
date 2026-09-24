@@ -1,0 +1,30 @@
+name: Admin build
+
+on:
+  push:
+    branches: [feature/admin-subdomain-gate]
+  pull_request:
+    paths:
+      - "middleware.ts"
+      - "auth.config.ts"
+      - "auth.ts"
+      - "app/admin/**"
+      - "app/api/admin/**"
+      - "package.json"
+      - "package-lock.json"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/redumbrella?schema=public
+      AUTH_SECRET: ci-test-secret-only-not-for-production-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
