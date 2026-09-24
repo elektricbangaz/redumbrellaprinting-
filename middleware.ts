@@ -2,13 +2,13 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
 
-const adminHost = "admin.redumbrellaprinting.com";
+const adminHosts = new Set(["admin.redumbrellaprinting.com", "www.admin.redumbrellaprinting.com"]);
 const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {
   const url = request.nextUrl;
   const pathname = url.pathname;
-  const isAdminHost = url.hostname.toLowerCase() === adminHost;
+  const isAdminHost = adminHosts.has(url.hostname.toLowerCase());
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminApi = pathname === "/api/admin" || pathname.startsWith("/api/admin/");
   const isAuthApi = pathname === "/api/auth" || pathname.startsWith("/api/auth/");
