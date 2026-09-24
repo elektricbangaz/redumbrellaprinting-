@@ -37,7 +37,7 @@ export function NewPurchaseOrderForm() {
     setError("");
     setSubmitting(true);
     try {
-      const res = await fetch("/api/admin/purchase-orders", {
+      const res = await fetch("/api/purchase-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -54,7 +54,7 @@ export function NewPurchaseOrderForm() {
         }),
       });
       if (!res.ok) throw new Error("Failed to create purchase order.");
-      router.push("/admin/purchase-orders");
+      router.push("/purchase-orders");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
