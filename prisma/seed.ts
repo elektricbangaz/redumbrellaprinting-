@@ -46,10 +46,14 @@ async function main() {
   }
 
   const adminEmail = "admin@redumbrellaprinting.com";
-  const passwordHash = await bcrypt.hash("ChangeMe123!", 10);
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 16) {
+    throw new Error("Set SEED_ADMIN_PASSWORD to a unique password of at least 16 characters before seeding.");
+  }
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { passwordHash },
     create: {
       email: adminEmail,
       name: "Admin",
@@ -59,7 +63,7 @@ async function main() {
   });
 
   console.log("Seeded products and admin user.");
-  console.log(`Admin login: ${adminEmail} / ChangeMe123!`);
+  console.log(`Admin login: ${adminEmail}`);
 }
 
 main()
