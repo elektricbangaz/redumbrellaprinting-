@@ -15,7 +15,7 @@ export default async function AdminPurchaseOrdersPage() {
           <h1>Purchase Orders</h1>
           <p>Manage supplier POs for blanks, ink, and materials.</p>
         </div>
-        <Link className="button button-red" href="/admin/purchase-orders/new">
+        <Link className="button button-red" href="/purchase-orders/new">
           + New Purchase Order
         </Link>
       </div>
