@@ -37,7 +37,7 @@ export default async function AdminWorkOrdersPage() {
               .map((w) => (
                 <div className="admin-kanban-card" key={w.id}>
                   <b>{w.workOrderNumber}</b>
-                  <Link href={`/admin/orders/${w.orderId}`}>{w.order.orderNumber}</Link>
+                  <Link href={`/orders/${w.orderId}`}>{w.order.orderNumber}</Link>
                   <span>{w.order.customerName}</span>
                   <span>
                     {w.order.items
