@@ -39,7 +39,7 @@ export default async function AdminOrdersPage() {
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td>
-                    <Link href={`/admin/orders/${o.id}`}>{o.orderNumber}</Link>
+                    <Link href={`/orders/${o.id}`}>{o.orderNumber}</Link>
                   </td>
                   <td>
                     {o.customerName}
