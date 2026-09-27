@@ -43,7 +43,7 @@ export default async function AdminQuotesPage() {
               {quoteCandidates.map((order) => (
                 <tr key={order.id}>
                   <td>
-                    <Link href={`/admin/quotes/${order.id}`}>{order.orderNumber}</Link>
+                    <Link href={`/quotes/${order.id}`}>{order.orderNumber}</Link>
                   </td>
                   <td>{order.customerName}</td>
                   <td>{order.items.map((item) => item.product.name).join(", ") || "Custom job"}</td>

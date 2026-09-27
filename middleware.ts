@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
 
 const adminHosts = new Set(["admin.redumbrellaprinting.com", "www.admin.redumbrellaprinting.com"]);
-const adminRoutes = ["/login", "/orders", "/work-orders", "/purchase-orders", "/broadcasts"];
+const adminRoutes = [
+  "/login", "/dashboard", "/customers", "/quotes", "/design-approvals",
+  "/inventory", "/invoices", "/catalog", "/orders", "/work-orders",
+  "/purchase-orders", "/broadcasts",
+];
 const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {
@@ -26,7 +30,7 @@ export default auth((request) => {
 
   if (isAdminPath) {
     const clean = new URL(external);
-    clean.pathname = pathname.slice("/admin".length) || "/";
+    clean.pathname = pathname === "/admin/products" ? "/catalog" : pathname.slice("/admin".length) || "/";
     return NextResponse.redirect(clean);
   }
 
@@ -43,10 +47,16 @@ export default auth((request) => {
   }
 
   if (request.auth?.user && (pathname === "/" || pathname === "/login")) {
-    const orders = new URL(external);
-    orders.pathname = "/orders";
-    orders.search = "";
-    return NextResponse.redirect(orders);
+    const dashboard = new URL(external);
+    dashboard.pathname = "/dashboard";
+    dashboard.search = "";
+    return NextResponse.redirect(dashboard);
+  }
+
+  if (isCleanAdminRoute) {
+    const internal = request.nextUrl.clone();
+    internal.pathname = pathname === "/catalog" ? "/admin/products" : `/admin${pathname}`;
+    return NextResponse.rewrite(internal);
   }
 
   return NextResponse.next();

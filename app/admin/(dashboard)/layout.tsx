@@ -18,17 +18,17 @@ export default async function AdminDashboardLayout({
           <span>Admin</span>
         </div>
         <nav className="admin-nav">
-          <Link href="/admin/dashboard">Dashboard</Link>
-          <Link href="/admin/customers">Customers</Link>
-          <Link href="/admin/quotes">Quotes</Link>
-          <Link href="/admin/design-approvals">Design Approvals</Link>
-          <Link href="/admin/inventory">Inventory</Link>
-          <Link href="/admin/invoices">Invoices</Link>
-          <Link href="/admin/products">Products</Link>
-          <Link href="/admin/orders">Orders</Link>
-          <Link href="/admin/work-orders">Work Orders</Link>
-          <Link href="/admin/purchase-orders">Purchase Orders</Link>
-          <Link href="/admin/broadcasts">Broadcasts</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/customers">Customers</Link>
+          <Link href="/quotes">Quotes</Link>
+          <Link href="/design-approvals">Design Approvals</Link>
+          <Link href="/inventory">Inventory</Link>
+          <Link href="/invoices">Invoices</Link>
+          <Link href="/catalog">Products</Link>
+          <Link href="/orders">Orders</Link>
+          <Link href="/work-orders">Work Orders</Link>
+          <Link href="/purchase-orders">Purchase Orders</Link>
+          <Link href="/broadcasts">Broadcasts</Link>
         </nav>
         <div className="admin-user">
           <div>
@@ -38,7 +38,7 @@ export default async function AdminDashboardLayout({
           <form
             action={async () => {
               "use server";
-              await signOut({ redirectTo: "/admin/login" });
+              await signOut({ redirectTo: "/login" });
             }}
           >
             <button className="admin-signout" type="submit">

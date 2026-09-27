@@ -36,7 +36,7 @@ export default async function AdminCustomersPage() {
               {customers.map((customer) => (
                 <tr key={customer.id}>
                   <td>
-                    <Link href={`/admin/customers/${customer.id}`}>{customer.name ?? "—"}</Link>
+                    <Link href={`/customers/${customer.id}`}>{customer.name ?? "—"}</Link>
                   </td>
                   <td>{customer.email}</td>
                   <td>{customer.phone ?? "—"}</td>

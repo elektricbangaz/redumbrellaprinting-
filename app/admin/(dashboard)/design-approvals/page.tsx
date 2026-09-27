@@ -36,7 +36,7 @@ export default async function AdminDesignApprovalsPage() {
               {designs.map((design) => (
                 <tr key={design.id}>
                   <td>
-                    <Link href={`/admin/design-approvals/${design.id}`}>{design.id.slice(-8).toUpperCase()}</Link>
+                    <Link href={`/design-approvals/${design.id}`}>{design.id.slice(-8).toUpperCase()}</Link>
                   </td>
                   <td>{design.customer?.name ?? design.customer?.email ?? "—"}</td>
                   <td>{design.product.name}</td>
