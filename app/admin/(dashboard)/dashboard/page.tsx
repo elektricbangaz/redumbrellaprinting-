@@ -89,7 +89,7 @@ export default async function AdminDashboardPage() {
                 {orders.map((order) => (
                   <tr key={order.id}>
                     <td>
-                      <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
+                      <Link href={`/orders/${order.id}`}>{order.orderNumber}</Link>
                     </td>
                     <td>{order.customerName}</td>
                     <td>{formatJMD(order.total)}</td>

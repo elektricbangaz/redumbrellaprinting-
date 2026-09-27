@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/prepare-production-db.mjs",
     "build": "rm -rf .next && node scripts/extract-favicons.mjs && next build",
     "start": "next start",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:bootstrap-admin": "tsx scripts/bootstrap-admin.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
