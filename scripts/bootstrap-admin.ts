@@ -12,11 +12,10 @@ async function main() {
 
   const email = process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_BOOTSTRAP_PASSWORD;
-  if (!email || !/^\S+@\S+\.\S+$/.test(email) || !password || password.length < 16) {
-    throw new Error(
-      "First admin not configured. Set ADMIN_BOOTSTRAP_EMAIL and a unique ADMIN_BOOTSTRAP_PASSWORD of at least 16 characters in the Production environment."
-    );
-  }
+  if (!email) throw new Error("ADMIN_BOOTSTRAP_EMAIL is missing in Production.");
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("ADMIN_BOOTSTRAP_EMAIL must be a valid email address.");
+  if (!password) throw new Error("ADMIN_BOOTSTRAP_PASSWORD is missing in Production.");
+  if (password.length < 16) throw new Error("ADMIN_BOOTSTRAP_PASSWORD must be at least 16 characters.");
 
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.adminUser.upsert({
