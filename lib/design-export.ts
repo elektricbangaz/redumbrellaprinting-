@@ -1,5 +1,38 @@
 import type { DesignLayer } from "@/lib/designer-types";
 
+export type SurfaceLayout = {
+  key: string;
+  xPct: number;
+  yPct: number;
+  widthPct: number;
+  heightPct: number;
+  safeMarginPct: number;
+};
+
+export const PRINT_SURFACES: Record<string, SurfaceLayout> = {
+  front: { key: "front", xPct: 50, yPct: 46, widthPct: 68, heightPct: 44, safeMarginPct: 12 },
+  fullFront: { key: "fullFront", xPct: 50, yPct: 46, widthPct: 68, heightPct: 44, safeMarginPct: 12 },
+  leftChest: { key: "leftChest", xPct: 28, yPct: 36, widthPct: 24, heightPct: 16, safeMarginPct: 8 },
+  rightChest: { key: "rightChest", xPct: 72, yPct: 36, widthPct: 24, heightPct: 16, safeMarginPct: 8 },
+  back: { key: "back", xPct: 50, yPct: 46, widthPct: 68, heightPct: 44, safeMarginPct: 12 },
+  fullBack: { key: "fullBack", xPct: 50, yPct: 46, widthPct: 68, heightPct: 44, safeMarginPct: 12 },
+  upperBack: { key: "upperBack", xPct: 50, yPct: 26, widthPct: 52, heightPct: 22, safeMarginPct: 10 },
+  fullWrap: { key: "fullWrap", xPct: 50, yPct: 50, widthPct: 84, heightPct: 64, safeMarginPct: 10 },
+};
+
+export function getPrintSurfaceLayout(surfaceKey = "front") {
+  return PRINT_SURFACES[surfaceKey] ?? PRINT_SURFACES.front;
+}
+
+export function getSurfaceTransform(surfaceKey: string, width: number, height: number) {
+  const layout = getPrintSurfaceLayout(surfaceKey);
+  const x = (layout.xPct / 100) * width;
+  const y = (layout.yPct / 100) * height;
+  const w = (layout.widthPct / 100) * width;
+  const h = (layout.heightPct / 100) * height;
+  return { x, y, w, h, left: x - w / 2, top: y - h / 2 };
+}
+
 async function loadImage(src: string) {
   return await new Promise<HTMLImageElement | null>((resolve) => {
     const img = new Image();
@@ -16,12 +49,14 @@ export async function renderLayersToDataUrl(
     width = 1800,
     height = 2100,
     background = "transparent",
-  }: { width?: number; height?: number; background?: string } = {}
+    surfaceKey = "front",
+  }: { width?: number; height?: number; background?: string; surfaceKey?: string } = {}
 ) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
+  const surface = getSurfaceTransform(surfaceKey, width, height);
   if (background !== "transparent") {
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
@@ -31,7 +66,9 @@ export async function renderLayersToDataUrl(
 
   for (const layer of layers) {
     ctx.save();
-    ctx.translate((layer.x / 100) * width, (layer.y / 100) * height);
+    const localX = ((layer.x / 100) * surface.w) + surface.left;
+    const localY = ((layer.y / 100) * surface.h) + surface.top;
+    ctx.translate(localX, localY);
     ctx.rotate((layer.rotation * Math.PI) / 180);
 
     if (layer.type === "text") {
@@ -43,7 +80,7 @@ export async function renderLayersToDataUrl(
       ctx.fillStyle = layer.color;
       ctx.textAlign = layer.align;
       ctx.textBaseline = "middle";
-      const maxWidth = ((layer.widthPct ?? 44) / 100) * width;
+      const maxWidth = ((layer.widthPct ?? 44) / 100) * surface.w;
       const lines: string[] = [];
       const paragraphs = layer.content.split(/\n/);
       for (const paragraph of paragraphs) {
@@ -82,7 +119,7 @@ export async function renderLayersToDataUrl(
     } else {
       const img = await loadImage(layer.src);
       if (img) {
-        const targetWidth = (layer.widthPct / 100) * width;
+        const targetWidth = (layer.widthPct / 100) * surface.w;
         const ratio = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
         const targetHeight = targetWidth * ratio;
         ctx.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);

@@ -35,7 +35,7 @@ export const CORE_CATALOG: CatalogProduct[] = [
     colors: ["White", "Black", "Navy", "Red"],
     sizes: ["S", "M", "L", "XL", "2XL"],
     images: ["https://res.cloudinary.com/crtuavbs/image/upload/v1789409906/Polo_Tshirt.png"],
-    previewMode: "flat",
+    previewMode: "apparel3d",
   },
   {
     id: "catalog-hoodie",
