@@ -5,8 +5,9 @@ import { authConfig } from "./auth.config";
 const adminHosts = new Set(["admin.redumbrellaprinting.com", "www.admin.redumbrellaprinting.com"]);
 const adminRoutes = [
   "/login", "/forgot-password", "/reset-password", "/dashboard", "/customers", "/quotes", "/design-approvals",
-  "/inventory", "/invoices", "/payments", "/receivables", "/catalog", "/templates",
-  "/orders", "/work-orders", "/purchase-orders", "/broadcasts", "/staff", "/reports", "/settings",
+  "/inventory", "/invoices", "/payments", "/receivables", "/catalog", "/templates", "/orders",
+  "/work-orders", "/jobs", "/job-queue", "/production", "/floor-board", "/pickup-delivery",
+  "/purchase-orders", "/broadcasts", "/staff", "/reports", "/settings",
 ];
 const { auth } = NextAuth(authConfig);
 
@@ -23,9 +24,7 @@ export default auth((request) => {
   if (request.headers.get("host")) external.host = request.headers.get("host")!;
 
   if (!isAdminHost) {
-    if (isAdminPath || isAdminApi || isAuthApi || isCleanAdminRoute) {
-      return new NextResponse(null, { status: 404 });
-    }
+    if (isAdminPath || isAdminApi || isAuthApi || isCleanAdminRoute) return new NextResponse(null, { status: 404 });
     return NextResponse.next();
   }
 
@@ -36,34 +35,24 @@ export default auth((request) => {
   }
 
   if (isAuthApi) return NextResponse.next();
-  if (pathname !== "/" && !isCleanAdminRoute && !isAdminApi) {
-    return new NextResponse(null, { status: 404 });
-  }
+  if (pathname !== "/" && !isCleanAdminRoute && !isAdminApi) return new NextResponse(null, { status: 404 });
 
   const isPublicAdminRoute = pathname === "/login" || pathname === "/forgot-password" || pathname === "/reset-password" || isPasswordResetApi;
   if (!request.auth?.user && !isPublicAdminRoute) {
-    const login = new URL(external);
-    login.pathname = "/login";
-    login.search = "";
-    return NextResponse.redirect(login);
+    const login = new URL(external); login.pathname = "/login"; login.search = ""; return NextResponse.redirect(login);
   }
 
   if (request.auth?.user && (pathname === "/" || pathname === "/login")) {
-    const dashboard = new URL(external);
-    dashboard.pathname = "/dashboard";
-    dashboard.search = "";
-    return NextResponse.redirect(dashboard);
+    const dashboard = new URL(external); dashboard.pathname = "/dashboard"; dashboard.search = ""; return NextResponse.redirect(dashboard);
   }
 
   if (isCleanAdminRoute) {
     const internal = request.nextUrl.clone();
-    internal.pathname = pathname === "/catalog" ? "/admin/products" : `/admin${pathname}`;
+    internal.pathname = pathname === "/catalog" ? "/admin/products" : "/admin" + pathname;
     return NextResponse.rewrite(internal);
   }
 
   return NextResponse.next();
 });
 
-export const config = {
-  matcher: ["/((?!_next/|favicon.ico|favicon-|apple-touch-icon|android-chrome-|site.webmanifest).*)"],
-};
+export const config = { matcher: ["/((?!_next/|favicon.ico|favicon-|apple-touch-icon|android-chrome-|site.webmanifest).*)"] };
