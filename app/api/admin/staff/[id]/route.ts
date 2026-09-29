@@ -10,7 +10,7 @@ const schema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const role = (session?.user as (typeof session.user & { role?: string }) | undefined)?.role;
+  const role = (session?.user as { role?: string } | undefined)?.role;
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (role !== "ADMIN") return NextResponse.json({ error: "Administrator access required." }, { status: 403 });
 
