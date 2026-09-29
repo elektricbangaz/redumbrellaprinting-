@@ -45,11 +45,20 @@ async function main() {
     });
   }
 
-  const adminEmail = "admin@redumbrellaprinting.com";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  const adminEmail =
+    process.env.ADMIN_BOOTSTRAP_EMAIL ??
+    process.env.SEED_ADMIN_EMAIL ??
+    "admin@redumbrellaprinting.com";
+
+  const adminPassword =
+    process.env.ADMIN_BOOTSTRAP_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD;
+
   if (!adminPassword || adminPassword.length < 16) {
-    throw new Error("Set SEED_ADMIN_PASSWORD to a unique password of at least 16 characters before seeding.");
+    throw new Error(
+      "Set ADMIN_BOOTSTRAP_PASSWORD (or the legacy SEED_ADMIN_PASSWORD) to a unique password of at least 16 characters before seeding."
+    );
   }
+
   const passwordHash = await bcrypt.hash(adminPassword, 12);
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
