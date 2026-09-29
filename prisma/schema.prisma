@@ -13,13 +13,16 @@ enum AdminRole {
 }
 
 model AdminUser {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  role         AdminRole @default(STAFF)
-  createdAt    DateTime  @default(now())
-  broadcasts   Broadcast[]
+  id                       String    @id @default(cuid())
+  email                    String    @unique
+  name                     String
+  passwordHash             String
+  role                     AdminRole @default(STAFF)
+  passwordResetTokenHash   String?   @unique
+  passwordResetExpiresAt   DateTime?
+  passwordResetRequestedAt DateTime?
+  createdAt                DateTime  @default(now())
+  broadcasts               Broadcast[]
 }
 
 model Product {

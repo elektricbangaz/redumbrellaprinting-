@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function AdminLoginPage() {
           Password
           <input name="password" type="password" required autoComplete="current-password" />
         </label>
+        <Link className="admin-login-link" href="/forgot-password">Forgot password?</Link>
         <button className="button button-red" type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign In"}
         </button>

@@ -4,9 +4,9 @@ import { authConfig } from "./auth.config";
 
 const adminHosts = new Set(["admin.redumbrellaprinting.com", "www.admin.redumbrellaprinting.com"]);
 const adminRoutes = [
-  "/login", "/dashboard", "/customers", "/quotes", "/design-approvals",
-  "/inventory", "/invoices", "/catalog", "/orders", "/work-orders",
-  "/purchase-orders", "/broadcasts",
+  "/login", "/forgot-password", "/reset-password", "/dashboard", "/customers", "/quotes", "/design-approvals",
+  "/inventory", "/invoices", "/payments", "/receivables", "/catalog", "/templates",
+  "/orders", "/work-orders", "/purchase-orders", "/broadcasts", "/staff", "/reports", "/settings",
 ];
 const { auth } = NextAuth(authConfig);
 
@@ -16,6 +16,7 @@ export default auth((request) => {
   const isAdminHost = requestHost !== undefined && adminHosts.has(requestHost);
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminApi = pathname === "/api/admin" || pathname.startsWith("/api/admin/");
+  const isPasswordResetApi = pathname === "/api/admin/password-reset/request" || pathname === "/api/admin/password-reset/confirm";
   const isAuthApi = pathname === "/api/auth" || pathname.startsWith("/api/auth/");
   const isCleanAdminRoute = adminRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
   const external = new URL(request.url);
@@ -39,7 +40,8 @@ export default auth((request) => {
     return new NextResponse(null, { status: 404 });
   }
 
-  if (!request.auth?.user && pathname !== "/login") {
+  const isPublicAdminRoute = pathname === "/login" || pathname === "/forgot-password" || pathname === "/reset-password" || isPasswordResetApi;
+  if (!request.auth?.user && !isPublicAdminRoute) {
     const login = new URL(external);
     login.pathname = "/login";
     login.search = "";

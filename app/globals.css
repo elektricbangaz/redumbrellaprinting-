@@ -20,6 +20,8 @@ footer{margin-top:28px;background:var(--dark);color:#fff;padding:30px 4.5vw 15px
 .admin-login-card input{border:1px solid var(--line);border-radius:6px;padding:11px 12px;font-size:14px}
 .admin-login-card button{margin-top:6px}
 .admin-login-error{background:#fdeaea;color:var(--red);font-size:12px;font-weight:700;padding:9px 11px;border-radius:6px}
+.admin-login-link{align-self:flex-end;color:var(--red);font-size:12px;font-weight:700;text-decoration:none}.admin-login-link:hover{text-decoration:underline}
+.admin-login-success{background:#eaf7ee;color:#176b35;font-size:12px;font-weight:700;padding:10px 12px;border-radius:6px}.admin-login-card .admin-login-secondary{margin-top:0;background:transparent;color:var(--red);border:1px solid var(--line)}
 .admin-shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
 .admin-sidebar{background:var(--dark);color:#fff;padding:26px 20px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .admin-logo{font-size:14px;font-weight:800;letter-spacing:1px;margin-bottom:30px;display:flex;flex-direction:column;gap:2px}
