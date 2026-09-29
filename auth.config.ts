@@ -2,6 +2,8 @@ import type { NextAuthConfig } from "next-auth";
 
 // Edge-safe configuration. The admin subdomain gate lives in middleware.ts.
 export const authConfig: NextAuthConfig = {
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dev-only-secret-change-me",
+  trustHost: true,
   providers: [],
   pages: {
     signIn: "/login",
