@@ -10,8 +10,11 @@ on:
       - "auth.ts"
       - "app/admin/**"
       - "app/api/admin/**"
+      - "components/admin/**"
+      - "prisma/**"
       - "package.json"
       - "package-lock.json"
+      - ".github/workflows/admin-build.yml"
 
 jobs:
   build:
@@ -27,4 +30,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - run: npm run build
+      - name: Build with captured log
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-build-log
+          path: build.log
