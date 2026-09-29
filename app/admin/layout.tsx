@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./admin.css";
+import "./admin-readability.css";
+import "./admin-job-queue.css";
 
 export const metadata: Metadata = {
   title: "Admin — Red Umbrella Printing",

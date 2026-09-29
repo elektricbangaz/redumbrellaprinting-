@@ -131,10 +131,17 @@ model OrderItem {
 }
 
 enum WorkOrderStage {
+  SUBMITTED
+  REVIEW
+  NEEDS_CUSTOMER_APPROVAL
+  APPROVED
   QUEUED
   IN_PROGRESS
   QUALITY_CHECK
+  READY
   COMPLETED
+  ON_HOLD
+  CANCELLED
 }
 
 model WorkOrder {
@@ -142,12 +149,28 @@ model WorkOrder {
   workOrderNumber String         @unique
   orderId         String
   order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  stage           WorkOrderStage @default(QUEUED)
+  stage           WorkOrderStage @default(SUBMITTED)
+  priority        String         @default("NORMAL")
+  productionMethod String?
+  placement       String?
   assignedTo      String?
   dueDate         DateTime?
+  blockedReason   String?
   notes           String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  events          WorkOrderEvent[]
+}
+
+model WorkOrderEvent {
+  id          String         @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder      @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  fromStage   WorkOrderStage?
+  toStage     WorkOrderStage
+  note        String?
+  changedBy   String?
+  createdAt   DateTime       @default(now())
 }
 
 enum PurchaseOrderStatus {

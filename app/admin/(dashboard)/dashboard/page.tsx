@@ -15,13 +15,14 @@ export default async function AdminDashboardPage() {
   const periodStart = new Date(now);
   periodStart.setHours(0, 0, 0, 0);
   periodStart.setDate(periodStart.getDate() - 6);
-  const [orders, recentOrders, workOrders, completedCount, inProductionCount, readyCount, periodPaid, outstandingOrders, topPaidOrders] = await Promise.all([
+  const [orders, recentOrders, workOrders, completedCount, inProductionCount, readyCount, reviewCount, periodPaid, outstandingOrders, topPaidOrders] = await Promise.all([
     prisma.order.findMany({ where: { createdAt: { gte: periodStart } }, select: { createdAt: true, total: true, paymentStatus: true } }),
     prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.workOrder.findMany({ include: { order: { select: { orderNumber: true, customerName: true } } }, orderBy: { createdAt: "desc" }, take: 5 }),
-    prisma.order.count({ where: { status: "COMPLETED" } }),
-    prisma.workOrder.count({ where: { stage: { in: ["QUEUED", "IN_PROGRESS", "QUALITY_CHECK"] } } }),
-    prisma.order.count({ where: { status: "READY_FOR_PICKUP" } }),
+    prisma.workOrder.count({ where: { stage: "COMPLETED" } }),
+    prisma.workOrder.count({ where: { stage: { in: ["IN_PROGRESS", "QUALITY_CHECK"] } } }),
+    prisma.workOrder.count({ where: { stage: "READY" } }),
+    prisma.workOrder.count({ where: { stage: { in: ["SUBMITTED", "REVIEW", "NEEDS_CUSTOMER_APPROVAL"] } } }),
     prisma.order.aggregate({ where: { paymentStatus: "PAID", createdAt: { gte: periodStart } }, _sum: { total: true } }),
     prisma.order.findMany({ where: { paymentStatus: { in: ["UNPAID", "PENDING", "FAILED"] } }, orderBy: { createdAt: "asc" }, take: 5 }),
     prisma.order.findMany({ where: { paymentStatus: "PAID" }, select: { customerName: true, total: true }, orderBy: { createdAt: "desc" }, take: 100 }),
@@ -54,7 +55,8 @@ export default async function AdminDashboardPage() {
   ];
   const dateRange = `${days[0].date.toLocaleDateString("en-JM", { month: "short", day: "numeric" })} – ${days[6].date.toLocaleDateString("en-JM", { month: "short", day: "numeric" })}`;
   const progressStages = [
-    { label: "Queued", count: stageCount.get("QUEUED") ?? 0, icon: Clock3, tone: "grey" },
+    { label: "Needs Review", count: reviewCount, icon: Clock3, tone: "grey" },
+    { label: "Queued", count: stageCount.get("QUEUED") ?? 0, icon: ShoppingBag, tone: "grey" },
     { label: "In Production", count: stageCount.get("IN_PROGRESS") ?? 0, icon: Factory, tone: "blue" },
     { label: "Quality Check", count: stageCount.get("QUALITY_CHECK") ?? 0, icon: ClipboardCheck, tone: "amber" },
     { label: "Ready for Pickup", count: readyCount, icon: PackageCheck, tone: "green" },

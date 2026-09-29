@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatJMD } from "@/lib/money";
 import { PaymentStatusBadge } from "@/components/admin/badges";
-import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export default async function AdminOrderDetailPage({
             {order.workOrders[0]?.workOrderNumber ?? "—"}
           </p>
         </div>
-        <OrderStatusSelect orderId={order.id} status={order.status} />
+          {order.workOrders[0] && <Link className="button button-red" href="/work-orders">Manage production job</Link>}
       </div>
 
       <div className="admin-grid-2">
@@ -64,6 +64,8 @@ export default async function AdminOrderDetailPage({
           <p style={{ fontSize: 20, fontWeight: 800, color: "var(--red)" }}>
             {formatJMD(order.total)}
           </p>
+          <h3>Fulfillment</h3>
+          <p>Order status: <strong>{order.status.replaceAll("_", " ")}</strong></p>
         </div>
       </div>
 

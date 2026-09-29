@@ -88,6 +88,18 @@ export async function POST(req: Request) {
     return { item, product, lineTotal };
   });
 
+  const firstSubmittedDesign = itemsForCreate.find(({ item }) => item.design)?.item.design?.canvasData;
+  const submittedDesignRecord = firstSubmittedDesign && typeof firstSubmittedDesign === "object"
+    ? firstSubmittedDesign as Record<string, unknown>
+    : {};
+  const submittedProductRecord = submittedDesignRecord.product && typeof submittedDesignRecord.product === "object"
+    ? submittedDesignRecord.product as Record<string, unknown>
+    : {};
+  const productionMethod = [submittedDesignRecord.decorationMethod, submittedDesignRecord.productionMethod, submittedProductRecord.decorationMethod]
+    .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+  const placement = [submittedDesignRecord.printZoneId, submittedDesignRecord.placement, submittedProductRecord.printZoneId]
+    .find((value) => typeof value === "string" && value.trim()) as string | undefined;
+
   const orderNumber = generateOrderNumber();
   const order = await prisma.order.create({
     data: {
@@ -129,7 +141,21 @@ export async function POST(req: Request) {
           };
         })),
       },
-      workOrders: { create: { workOrderNumber: generateWorkOrderNumber(), stage: "QUEUED" } },
+      workOrders: {
+        create: {
+          workOrderNumber: generateWorkOrderNumber(),
+          stage: "SUBMITTED",
+          productionMethod: productionMethod ?? null,
+          placement: placement ?? null,
+          events: {
+            create: {
+              toStage: "SUBMITTED",
+              note: "Order submitted from the storefront; awaiting production review.",
+              changedBy: "Storefront",
+            },
+          },
+        },
+      },
     },
   });
 

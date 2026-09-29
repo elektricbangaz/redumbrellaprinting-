@@ -1,0 +1,124 @@
+/* Admin readability baseline: prevent presentation-sized microtype in operational screens. */
+.admin-sidebar-help strong{font-size:12px}
+.admin-sidebar-help small,.admin-sidebar-footer{font-size:10px}
+.admin-brand-copy strong{font-size:13px}
+.admin-brand-copy small{font-size:9px}
+.admin-brand-logo{width:49px;height:49px;flex-basis:49px}
+.admin-nav-link{min-height:42px;font-size:13px;gap:12px}
+.admin-nav-link svg{width:18px;height:18px}
+.admin-topbar-title>strong{font-size:16px}
+.admin-topbar-title>span{font-size:10px}
+.admin-live-status{font-size:12px}
+.admin-profile-copy strong{font-size:13px}
+.admin-profile-copy small{font-size:11px}
+.admin-signout{min-height:38px;font-size:12px}
+.admin-content{padding-top:26px}
+.admin-root .admin-header h1{font-size:29px}
+.admin-root .admin-header p{font-size:14px;line-height:1.45}
+.admin-root .admin-card{padding:22px}
+.admin-root .admin-card h2,.admin-root .admin-card h3{font-size:17px}
+.admin-root .admin-table{font-size:13px}
+.admin-root .admin-table th{font-size:10px;padding:12px 10px}
+.admin-root .admin-table td{font-size:12px;padding:13px 10px}
+.admin-root .admin-table td small{font-size:11px}
+.admin-root .badge{font-size:10px;padding:5px 9px}
+.admin-root .admin-kanban-col h3{font-size:12px}
+.admin-root .admin-kanban-card{font-size:13px;gap:9px;padding:15px}
+.admin-root .admin-kanban-card b{font-size:14px}
+.admin-root .admin-kanban-card select{min-height:40px;font-size:12px}
+.admin-root .admin-form label{font-size:13px}
+.admin-root .admin-form input,.admin-root .admin-form select,.admin-root .admin-form textarea{font-size:14px;min-height:44px}
+.admin-root .admin-empty{font-size:14px}
+.admin-dashboard{gap:18px}
+.client-dashboard-heading h1{font-size:30px}
+.client-dashboard-heading p{font-size:13px}
+.client-date-range,.client-new-order{font-size:12px;min-height:40px}
+.client-notifications{width:40px;height:40px}
+.client-kpis{gap:13px}
+.client-kpi{min-height:94px;padding:15px;gap:10px}
+.client-kpi>div{gap:7px}
+.client-kpi>div>span{font-size:12px}
+.client-kpi>div>strong{font-size:22px}
+.client-kpi>div>small{font-size:11px}
+.client-kpi>i{width:38px;height:38px;flex-basis:38px}
+.client-dashboard-row{gap:15px}
+.client-widget{padding:17px}
+.client-widget-heading{margin-bottom:14px}
+.client-widget-heading h2{font-size:15px}
+.client-widget-heading h2 small{font-size:11px}
+.client-widget-heading>a{font-size:11px}
+.client-range-select{font-size:11px;padding:7px 9px}
+.client-sales-total{font-size:22px}
+.client-sales-caption{font-size:11px}
+.client-chart{height:165px;grid-template-columns:53px minmax(0,1fr)}
+.client-chart-y{font-size:10px}
+.client-chart svg text{font-size:10px}
+.client-outstanding{min-height:78px;padding:13px;gap:13px}
+.client-outstanding>span{width:39px;height:39px}
+.client-outstanding small,.client-receivable-cards small{font-size:10px}
+.client-outstanding strong{font-size:19px}
+.client-receivable-cards{gap:8px}
+.client-receivable-cards>div{min-height:65px;padding:9px}
+.client-receivable-cards strong{font-size:12px}
+.client-top-customer{min-height:43px;grid-template-columns:27px minmax(0,1fr) auto;gap:9px}
+.client-customer-initial{width:25px;height:25px;font-size:10px}
+.client-top-customer strong,.client-top-customer>span{font-size:11px}
+.client-table{min-width:660px;font-size:11px}
+.client-table th{font-size:9px;padding:11px 8px}
+.client-table td{font-size:11px;padding:12px 8px}
+.client-table .badge{font-size:9px;padding:5px 7px}
+.client-production-flow{padding:9px 3px 5px}
+.client-production-flow{grid-template-columns:repeat(6,minmax(0,1fr))}
+.client-production-step>span{width:36px;height:36px}
+.client-step-line{top:17px}
+.client-production-step>strong{font-size:10px}
+.client-production-step>small{font-size:10px}
+.client-quick-actions{gap:9px}
+.client-quick-actions>a{min-height:76px;gap:8px}
+.client-quick-actions>a svg{width:21px;height:21px}
+.client-quick-actions>a span{font-size:10px}
+.client-dashboard-footnote{font-size:10px;line-height:1.45}
+.admin-kpi-strip small{font-size:11px}
+.admin-kpi-strip strong{font-size:21px}
+.admin-data-note{font-size:11px;line-height:1.55}
+.admin-template-notice strong{font-size:14px}
+.admin-template-notice p{font-size:12px}
+.admin-template-notice a,.admin-card a{font-size:12px}
+.admin-report-stages>div,.admin-settings-list>div{font-size:12px}
+.admin-template-notice>span{width:42px;height:42px;flex-basis:42px}
+
+@media(max-width:880px){
+  .admin-brand-logo{width:39px;height:39px;flex-basis:39px}
+  .admin-nav-link{min-height:42px;font-size:12px}
+  .admin-root .admin-header h1{font-size:26px}
+  .client-dashboard-heading h1{font-size:27px}
+}
+@media(max-width:620px){
+  .admin-brand-logo{width:35px;height:35px;flex-basis:35px}
+  .admin-content{padding:14px 12px 30px}
+  .admin-nav-link{min-height:40px;font-size:11px}
+  .admin-root .admin-header h1{font-size:24px}
+  .admin-root .admin-header p{font-size:13px}
+  .client-dashboard-heading h1{font-size:24px}
+  .client-dashboard-heading p{font-size:12px}
+  .client-date-range,.client-new-order{font-size:10px;min-height:36px}
+  .client-notifications{width:36px;height:36px}
+  .client-kpi{min-height:83px;padding:12px}
+  .client-kpi>div>span{font-size:11px}
+  .client-kpi>div>strong{font-size:19px}
+  .client-kpi>div>small{font-size:10px}
+  .client-widget{padding:14px}
+  .client-widget-heading h2{font-size:14px}
+  .client-widget-heading>a{font-size:10px}
+  .client-chart{height:145px}
+  .client-production-step>strong,.client-production-step>small{font-size:8px}
+  .client-quick-actions>a span{font-size:9px}
+}
+
+.admin-queue-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:-5px 0 18px}
+.admin-queue-summary>div{display:grid;gap:6px;padding:14px 16px;border:1px solid #e7eaee;border-radius:10px;background:#fff}
+.admin-queue-summary small{font-size:12px;color:#6e7982}
+.admin-queue-summary strong{font-size:22px;color:#17212b}
+.admin-queue-meta{font-size:12px!important;line-height:1.4;color:#65717a}
+.admin-queue-meta b{color:#39454e}
+@media(max-width:620px){.admin-queue-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-queue-summary>div{padding:11px}.admin-queue-summary small{font-size:10px}.admin-queue-summary strong{font-size:19px}.admin-queue-meta{font-size:11px!important}}

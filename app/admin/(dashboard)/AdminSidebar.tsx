@@ -20,7 +20,6 @@ import {
   Shirt,
   ShoppingBag,
   UserRoundCog,
-  Umbrella,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -43,7 +42,7 @@ const groups: { label: string; items: { href: string; label: string; icon: Lucid
     items: [
       { href: "/catalog", label: "Products", icon: Shirt },
       { href: "/templates", label: "Templates", icon: LayoutTemplate },
-      { href: "/work-orders", label: "Production", icon: Factory },
+      { href: "/work-orders", label: "Production queue", icon: Factory },
       { href: "/design-approvals", label: "Artwork review", icon: ClipboardCheck },
       { href: "/inventory", label: "Inventory", icon: Boxes },
       { href: "/purchase-orders", label: "Purchase orders", icon: PackageCheck },
@@ -63,7 +62,7 @@ export default function AdminSidebar() {
   return (
     <aside className="admin-sidebar">
       <Link className="admin-brand" href="/dashboard" aria-label="Red Umbrella Printing admin home">
-        <span className="admin-brand-mark"><Umbrella size={21} strokeWidth={2.2} /></span>
+        <img className="admin-brand-logo" src="/logo-white.svg" alt="Red Umbrella Printing" />
         <span className="admin-brand-copy"><strong>RED UMBRELLA</strong><small>PRINT OPERATIONS</small></span>
       </Link>
       <nav className="admin-nav" aria-label="Admin navigation">
