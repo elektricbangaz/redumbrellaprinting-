@@ -1,0 +1,56 @@
+name: Branch diagnostic build
+on:
+  push:
+    branches: [red-umbrella-authoritative-admin]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/redumbrella?schema=public
+      AUTH_SECRET: ci-test-secret-only-not-for-production-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Capture diagnostics
+        shell: bash
+        run: |
+          set +e
+          : > build.log
+          npm ci >> build.log 2>&1
+          CI_STATUS=$?
+          echo "npm_ci_status=$CI_STATUS" >> build.log
+          if [ "$CI_STATUS" -eq 0 ]; then
+            npx prisma generate >> build.log 2>&1
+            PRISMA_STATUS=$?
+          else
+            PRISMA_STATUS=99
+          fi
+          echo "prisma_status=$PRISMA_STATUS" >> build.log
+          if [ "$CI_STATUS" -eq 0 ] && [ "$PRISMA_STATUS" -eq 0 ]; then
+            npm run build >> build.log 2>&1
+            BUILD_STATUS=$?
+          else
+            BUILD_STATUS=99
+          fi
+          echo "build_status=$BUILD_STATUS" >> build.log
+          echo "$CI_STATUS $PRISMA_STATUS $BUILD_STATUS" > build-status.txt
+          cat build.log
+          exit 0
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: branch-build-log
+          path: |
+            build.log
+            build-status.txt
+      - name: Final status
+        shell: bash
+        run: |
+          read CI_STATUS PRISMA_STATUS BUILD_STATUS < build-status.txt
+          test "$CI_STATUS" -eq 0
+          test "$PRISMA_STATUS" -eq 0
+          test "$BUILD_STATUS" -eq 0
