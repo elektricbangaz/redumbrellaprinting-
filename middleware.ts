@@ -14,7 +14,8 @@ const { auth } = NextAuth(authConfig);
 export default auth((request) => {
   const pathname = request.nextUrl.pathname;
   const requestHost = request.headers.get("host")?.split(":")[0].toLowerCase();
-  const isAdminHost = requestHost !== undefined && adminHosts.has(requestHost);
+  const isPreviewAdminHost = process.env.VERCEL_ENV === "preview" && Boolean(requestHost?.endsWith(".vercel.app"));
+  const isAdminHost = (requestHost !== undefined && adminHosts.has(requestHost)) || isPreviewAdminHost;
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminApi = pathname === "/api/admin" || pathname.startsWith("/api/admin/");
   const isPasswordResetApi = pathname === "/api/admin/password-reset/request" || pathname === "/api/admin/password-reset/confirm";
