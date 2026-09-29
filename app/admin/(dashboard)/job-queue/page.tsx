@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, Clock3, FileImage, Filter, ListFilter, PackageCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { WorkOrderControls } from "@/components/admin/WorkOrderControls";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function JobQueuePage({searchParams}:{searchParams:Promise<
   let jobs=all;
   if(sp.q){const q=sp.q.toLowerCase();jobs=jobs.filter((j)=>[j.workOrderNumber,j.order.orderNumber,j.order.customerName,product(j)].join(" ").toLowerCase().includes(q));}
   if(sp.stage==="OVERDUE") jobs=jobs.filter(overdue);
+  else if(sp.stage==="PRINTING") jobs=jobs.filter((j)=>j.stage==="IN_PROGRESS" && j.productionPhase==="PRINTING");
+  else if(sp.stage==="FINISHING") jobs=jobs.filter((j)=>j.stage==="IN_PROGRESS" && j.productionPhase==="FINISHING");
   else if(sp.stage) jobs=jobs.filter((j)=>j.stage===sp.stage || stageLabel(j).toUpperCase().replaceAll(" ","_")===sp.stage);
   const selected=all.find((j)=>j.id===sp.job)??jobs[0]??null;
   const waitingArtwork=all.filter((j)=>["SUBMITTED","REVIEW"].includes(j.stage)).length;
@@ -53,11 +56,11 @@ export default async function JobQueuePage({searchParams}:{searchParams:Promise<
         <div className="ru-stage-tabs">
           {[
             ["","All"],["SUBMITTED","New"],["REVIEW","Artwork"],["NEEDS_CUSTOMER_APPROVAL","Approval"],
-            ["QUEUED","Ready"],["IN_PROGRESS","Printing"],["FINISHING","Finishing"],["COMPLETED","Completed"],["OVERDUE","Overdue"]
+            ["QUEUED","Ready"],["PRINTING","Printing"],["FINISHING","Finishing"],["COMPLETED","Completed"],["OVERDUE","Overdue"]
           ].map(([v,l])=><Link key={v} className={sp.stage===v||(!sp.stage&&v==="")?"active":""} href={"/job-queue"+(v?"?stage="+v:"")}>{l}</Link>)}
         </div>
 
-        <div className="ru-queue-toolbar"><span>0 selected</span><button>Assign</button><button>Move Stage</button><button>Print Ticket</button><button>Mark Priority</button><button><ListFilter size={14}/> Sort: Due Date</button></div>
+        <div className="ru-queue-toolbar"><span>{selected ? "1 selected" : "0 selected"}</span>{selected ? <><a href="#manage-job">Assign</a><a href="#manage-job">Move Stage</a><Link href={"/orders/"+selected.orderId}>Print Ticket</Link><a href="#manage-job">Mark Priority</a></> : <><button disabled>Assign</button><button disabled>Move Stage</button><button disabled>Print Ticket</button><button disabled>Mark Priority</button></>}<button><ListFilter size={14}/> Sort: Due Date</button></div>
 
         <div className="ru-table-wrap"><table className="ru-queue-table">
           <thead><tr><th></th><th>Queue #</th><th>Job ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Status</th><th>Priority</th><th>Assigned To</th><th>Due Date</th><th>Stage</th></tr></thead>
@@ -87,7 +90,7 @@ export default async function JobQueuePage({searchParams}:{searchParams:Promise<
         </dl>
         <div className="ru-detail-block"><h3>Artwork Status</h3><p>{selected.order.items.some((i)=>i.designId)?"Artwork attached":"No files uploaded"}</p></div>
         <div className="ru-detail-block"><h3>Recent Activity</h3>{selected.events.map((e)=><p key={e.id}><strong>{e.changedBy||"System"}</strong> · {e.note||"Updated"}<small>{e.createdAt.toLocaleString()}</small></p>)}</div>
-        <div className="ru-detail-actions"><Link href={"/jobs?job="+selected.id}>Open on Production Board</Link><Link href={"/production?job="+selected.id}>Open on Floor Tablet</Link></div>
+        <div id="manage-job" className="ru-queue-manage"><h3>Manage Job</h3><WorkOrderControls id={selected.id} stage={selected.stage} priority={selected.priority} assignedTo={selected.assignedTo} dueDate={selected.dueDate?.toISOString().slice(0,10) ?? null} productionMethod={selected.productionMethod} placement={selected.placement} blockedReason={selected.blockedReason} paymentStatus={selected.order.paymentStatus}/></div><div className="ru-detail-actions"><Link href={"/jobs?job="+selected.id}>Open on Production Board</Link><Link href={"/production?job="+selected.id}>Open on Floor Tablet</Link></div>
       </aside>}
     </div>
   </div>;
