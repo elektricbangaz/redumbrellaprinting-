@@ -1,8 +1,6 @@
 name: Admin build
 
 on:
-  push:
-    branches: [feature/admin-subdomain-gate]
   pull_request:
     paths:
       - "middleware.ts"
@@ -28,17 +26,42 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx prisma generate
-      - name: Build with captured log
-        id: build
+      - name: Diagnose build
         shell: bash
         run: |
-          set -o pipefail
-          npm run build 2>&1 | tee build.log
-      - name: Upload build log
-        if: always()
+          set +e
+          : > build.log
+          npm ci >> build.log 2>&1
+          CI_STATUS=$?
+          echo "npm_ci_status=$CI_STATUS" >> build.log
+          if [ "$CI_STATUS" -eq 0 ]; then
+            npx prisma generate >> build.log 2>&1
+            PRISMA_STATUS=$?
+          else
+            PRISMA_STATUS=99
+          fi
+          echo "prisma_status=$PRISMA_STATUS" >> build.log
+          if [ "$CI_STATUS" -eq 0 ] && [ "$PRISMA_STATUS" -eq 0 ]; then
+            npm run build >> build.log 2>&1
+            BUILD_STATUS=$?
+          else
+            BUILD_STATUS=99
+          fi
+          echo "build_status=$BUILD_STATUS" >> build.log
+          echo "$CI_STATUS $PRISMA_STATUS $BUILD_STATUS" > build-status.txt
+          cat build.log
+          exit 0
+      - name: Upload build diagnostics
         uses: actions/upload-artifact@v4
         with:
           name: admin-build-log
-          path: build.log
+          path: |
+            build.log
+            build-status.txt
+      - name: Fail if build failed
+        shell: bash
+        run: |
+          read CI_STATUS PRISMA_STATUS BUILD_STATUS < build-status.txt
+          test "$CI_STATUS" -eq 0
+          test "$PRISMA_STATUS" -eq 0
+          test "$BUILD_STATUS" -eq 0
