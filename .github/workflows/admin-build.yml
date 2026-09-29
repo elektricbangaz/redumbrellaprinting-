@@ -14,6 +14,11 @@ on:
       - "package-lock.json"
       - ".github/workflows/admin-build.yml"
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,42 +31,37 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Diagnose build
-        shell: bash
-        run: |
-          set +e
-          : > build.log
-          npm ci >> build.log 2>&1
-          CI_STATUS=$?
-          echo "npm_ci_status=$CI_STATUS" >> build.log
-          if [ "$CI_STATUS" -eq 0 ]; then
-            npx prisma generate >> build.log 2>&1
-            PRISMA_STATUS=$?
-          else
-            PRISMA_STATUS=99
-          fi
-          echo "prisma_status=$PRISMA_STATUS" >> build.log
-          if [ "$CI_STATUS" -eq 0 ] && [ "$PRISMA_STATUS" -eq 0 ]; then
-            npm run build >> build.log 2>&1
-            BUILD_STATUS=$?
-          else
-            BUILD_STATUS=99
-          fi
-          echo "build_status=$BUILD_STATUS" >> build.log
-          echo "$CI_STATUS $PRISMA_STATUS $BUILD_STATUS" > build-status.txt
-          cat build.log
-          exit 0
-      - name: Upload build diagnostics
-        uses: actions/upload-artifact@v4
+      - name: Install
+        id: install
+        continue-on-error: true
+        run: npm ci > build.log 2>&1
+      - name: Prisma generate
+        id: prisma
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npx prisma generate >> build.log 2>&1
+      - name: Next build
+        id: nextbuild
+        if: steps.install.outcome == 'success' && steps.prisma.outcome == 'success'
+        continue-on-error: true
+        run: npm run build >> build.log 2>&1
+      - name: Comment diagnostic
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
-          name: admin-build-log
-          path: |
-            build.log
-            build-status.txt
-      - name: Fail if build failed
-        shell: bash
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('build.log') ? fs.readFileSync('build.log','utf8') : 'No build.log generated.';
+            const tail = log.slice(-12000);
+            const body = '### Admin build diagnostic\n\nInstall: **' + process.env.INSTALL + '** · Prisma: **' + process.env.PRISMA + '** · Build: **' + process.env.BUILD + '**\n\n```text\n' + tail + '\n```';
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body});
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          PRISMA: ${{ steps.prisma.outcome }}
+          BUILD: ${{ steps.nextbuild.outcome }}
+      - name: Enforce result
+        if: always()
         run: |
-          read CI_STATUS PRISMA_STATUS BUILD_STATUS < build-status.txt
-          test "$CI_STATUS" -eq 0
-          test "$PRISMA_STATUS" -eq 0
-          test "$BUILD_STATUS" -eq 0
+          test "${{ steps.install.outcome }}" = "success"
+          test "${{ steps.prisma.outcome }}" = "success"
+          test "${{ steps.nextbuild.outcome }}" = "success"
