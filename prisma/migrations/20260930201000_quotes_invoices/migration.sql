@@ -90,3 +90,78 @@ ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_customerId_fkey" FOREIGN KEY ("cus
 ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_quoteId_fkey" FOREIGN KEY ("quoteId") REFERENCES "Quote"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "InvoiceItem" ADD CONSTRAINT "InvoiceItem_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+CREATE TABLE "DesignTemplate" (
+  "id" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "productId" TEXT,
+  "canvasData" JSONB NOT NULL,
+  "previewImage" TEXT,
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "DesignTemplate_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "InventoryItem" (
+  "id" TEXT NOT NULL,
+  "sku" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "category" TEXT NOT NULL,
+  "unit" TEXT NOT NULL DEFAULT 'unit',
+  "quantity" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "reorderLevel" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "productId" TEXT,
+  "active" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "InventoryItem_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "InventoryMovement" (
+  "id" TEXT NOT NULL,
+  "inventoryItemId" TEXT NOT NULL,
+  "type" TEXT NOT NULL,
+  "quantity" DOUBLE PRECISION NOT NULL,
+  "note" TEXT,
+  "changedBy" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "InventoryMovement_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "AdminSetting" (
+  "key" TEXT NOT NULL,
+  "value" JSONB NOT NULL,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "AdminSetting_pkey" PRIMARY KEY ("key")
+);
+
+CREATE TABLE "PaymentTransaction" (
+  "id" TEXT NOT NULL,
+  "orderId" TEXT,
+  "invoiceId" TEXT,
+  "provider" "PaymentProvider",
+  "reference" TEXT,
+  "amount" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'JMD',
+  "status" "PaymentStatus" NOT NULL,
+  "source" TEXT NOT NULL DEFAULT 'SYSTEM',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PaymentTransaction_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "InventoryItem_sku_key" ON "InventoryItem"("sku");
+CREATE INDEX "DesignTemplate_productId_active_idx" ON "DesignTemplate"("productId","active");
+CREATE INDEX "InventoryItem_category_active_idx" ON "InventoryItem"("category","active");
+CREATE INDEX "InventoryMovement_inventoryItemId_createdAt_idx" ON "InventoryMovement"("inventoryItemId","createdAt");
+CREATE INDEX "PaymentTransaction_orderId_createdAt_idx" ON "PaymentTransaction"("orderId","createdAt");
+CREATE INDEX "PaymentTransaction_invoiceId_createdAt_idx" ON "PaymentTransaction"("invoiceId","createdAt");
+CREATE INDEX "PaymentTransaction_status_createdAt_idx" ON "PaymentTransaction"("status","createdAt");
+
+ALTER TABLE "DesignTemplate" ADD CONSTRAINT "DesignTemplate_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "InventoryItem" ADD CONSTRAINT "InventoryItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "InventoryMovement" ADD CONSTRAINT "InventoryMovement_inventoryItemId_fkey" FOREIGN KEY ("inventoryItemId") REFERENCES "InventoryItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
