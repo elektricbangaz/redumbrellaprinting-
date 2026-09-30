@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ProductImage } from "@/components/ProductImage";
 import { prisma } from "@/lib/prisma";
 import { formatJMD } from "@/lib/money";
 import { CORE_CATALOG } from "@/lib/catalog";
@@ -43,7 +44,7 @@ export default async function ProductDetail({params}:{params:Promise<{slug:strin
   return <main className="sf">
     <SiteHeader/>
     <section className="product-detail">
-      <div className="product-detail-media"><img src={image} alt={p.name}/></div>
+      <div className="product-detail-media"><ProductImage src={image} alt={p.name}/></div>
       <div className="product-detail-copy">
         <span>{p.category}</span>
         <h1>{p.name}</h1>
