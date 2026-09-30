@@ -31,6 +31,9 @@ export default async function ProductsPage({
         return {
           ...row,
           images: source?.images || (row.images as string[]),
+          basePrice: source?.basePrice ?? row.basePrice,
+          category: source?.category ?? row.category,
+          description: source?.description ?? row.description,
           quoteOnly: source?.quoteOnly ?? row.basePrice <= 0,
           previewMode: source?.previewMode,
         };
