@@ -43,7 +43,6 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         }))},
       },
     });
-    await tx.quote.update({where:{id},data:{status:"CONVERTED"}});
     return created;
   });
 
