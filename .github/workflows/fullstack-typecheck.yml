@@ -57,6 +57,13 @@ jobs:
             const log=fs.existsSync('typecheck.log')?fs.readFileSync('typecheck.log','utf8'):'No log.';
             const body='### Full-stack typecheck diagnostic\n\nInstall: **'+process.env.INSTALL+'** · Prisma: **'+process.env.PRISMA+'** · TypeScript: **'+process.env.TSC+'**\n\n```text\n'+log.slice(-14000)+'\n```';
             await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body});
+      - name: Upload typecheck diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullstack-typecheck-log
+          path: typecheck.log
+          if-no-files-found: warn
       - name: Enforce
         if: always()
         run: |
