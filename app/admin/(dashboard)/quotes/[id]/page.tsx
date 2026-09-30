@@ -15,6 +15,7 @@ export default async function AdminQuoteDetailPage({params}:{params:Promise<{id:
   return <QuoteEditor
     id={quote.id}
     quoteNumber={quote.quoteNumber}
+    publicToken={quote.publicToken}
     status={quote.status}
     issueDate={quote.issueDate.toISOString().slice(0,10)}
     validUntil={quote.validUntil?.toISOString().slice(0,10)??null}
