@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { CORE_CATALOG } from "@/lib/catalog";
 import { uploadDataUrl } from "@/lib/cloudinary-server";
+import { generateQuoteNumber } from "@/lib/order-numbers";
 
 const schema = z.object({
   productId: z.string(),
@@ -278,10 +279,49 @@ export async function POST(req: Request) {
       },
     });
 
+    const pricingRecord = input.pricing && typeof input.pricing === "object"
+      ? input.pricing as Record<string, unknown>
+      : {};
+    let quoteNumber: string | null = null;
+    if (pricingRecord.quoteOnly === true || source?.quoteOnly) {
+      quoteNumber = generateQuoteNumber();
+      await prisma.quote.create({
+        data: {
+          quoteNumber,
+          customerId: customer.id,
+          designId: record.id,
+          source: "DESIGN_LAB",
+          status: "REQUESTED",
+          customerName: input.customer.name,
+          customerEmail: input.customer.email,
+          customerPhone: input.customer.phone || null,
+          jobType: input.productName,
+          details: [
+            `Product: ${input.productName}`,
+            `Size / format: ${input.size}`,
+            `Colour: ${input.color}`,
+            `Quantity: ${input.quantity}`,
+            input.decorationMethod ? `Production method: ${input.decorationMethod}` : "",
+            input.activeSurfaceId ? `Surface: ${input.activeSurfaceId}` : "",
+          ].filter(Boolean).join("\n"),
+          items: {
+            create: {
+              description: `${input.productName} — ${input.size}`,
+              quantity: input.quantity,
+              unitPrice: 0,
+              lineTotal: 0,
+              sortOrder: 0,
+            },
+          },
+        },
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       designId: record.id,
-      reference: `RUP-D-${record.id.slice(-8).toUpperCase()}`,
+      quoteNumber,
+      reference: quoteNumber || `RUP-D-${record.id.slice(-8).toUpperCase()}`,
       assets: {
         surfaces: persistedSurfaceExports,
         front: front?.secure_url ?? null,
