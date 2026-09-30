@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { CORE_CATALOG } from "@/lib/catalog";
 import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
 import { buildRedirectUrl } from "@/lib/payments";
+import { calculateDesignerPrice } from "@/lib/designer-pricing";
+import { hasDesignOnSide, type DesignSurfaceId, type SurfaceDesignState } from "@/lib/design-surfaces";
 
 const orderSchema = z.object({
   customer: z.object({
@@ -84,9 +86,37 @@ export async function POST(req: Request) {
   let subtotal = 0;
   const itemsForCreate = items.map((item, index) => {
     const product = resolvedProducts[index]!;
-    const lineTotal = product.basePrice * item.quantity;
+    let unitPrice = product.basePrice;
+
+    const document = item.design?.canvasData && typeof item.design.canvasData === "object"
+      ? item.design.canvasData as Record<string, unknown>
+      : null;
+    if (document?.schemaVersion === 2) {
+      const surfaces = document.surfaces && typeof document.surfaces === "object"
+        ? document.surfaces as SurfaceDesignState
+        : {};
+      const activeSurfaceId = typeof document.activeSurfaceId === "string"
+        ? document.activeSurfaceId as DesignSurfaceId
+        : undefined;
+      const supplyMode = document.supplyMode === "customer" ? "customer" : "red-umbrella";
+      const calculated = calculateDesignerPrice({
+        productSlug: product.slug,
+        quantity: item.quantity,
+        size: item.size,
+        printZoneId: activeSurfaceId,
+        hasFrontDesign: hasDesignOnSide(surfaces, "front"),
+        hasBackDesign: hasDesignOnSide(surfaces, "back"),
+        supplyMode,
+      });
+      if (calculated.quoteOnly || typeof calculated.unitPrice !== "number") {
+        throw new Error(`Product ${product.name} requires a production quote for this configuration.`);
+      }
+      unitPrice = calculated.unitPrice;
+    }
+
+    const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
-    return { item, product, lineTotal };
+    return { item, product, unitPrice, lineTotal };
   });
 
   const firstSubmittedDesign = itemsForCreate.find(({ item }) => item.design)?.item.design?.canvasData;
@@ -117,7 +147,7 @@ export async function POST(req: Request) {
       subtotal,
       total: subtotal,
       items: {
-        create: await Promise.all(itemsForCreate.map(async ({ item, product, lineTotal }) => {
+        create: await Promise.all(itemsForCreate.map(async ({ item, product, unitPrice, lineTotal }) => {
           let designId: string | undefined;
           if (item.design?.designId) {
             const existingDesign = await prisma.design.findUnique({ where: { id: item.design.designId } });
@@ -143,7 +173,7 @@ export async function POST(req: Request) {
             size: item.size,
             color: item.color,
             quantity: item.quantity,
-            unitPrice: product.basePrice,
+            unitPrice,
             lineTotal,
           };
         })),
@@ -182,10 +212,10 @@ export async function POST(req: Request) {
       currency: order.currency,
       notes: "Storefront order invoice.",
       items: {
-        create: itemsForCreate.map(({ item, product, lineTotal }, index) => ({
+        create: itemsForCreate.map(({ item, product, unitPrice, lineTotal }, index) => ({
           description: `${product.name} — ${item.size} / ${item.color}`,
           quantity: item.quantity,
-          unitPrice: product.basePrice,
+          unitPrice,
           lineTotal,
           sortOrder: index,
         })),
