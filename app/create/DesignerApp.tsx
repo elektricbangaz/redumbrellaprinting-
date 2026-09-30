@@ -84,12 +84,25 @@ function previewModeForProduct(product: ProductOption) {
     (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" as const : "flat" as const);
 }
 
+type InitialTemplateState={
+  productId:string;
+  color:string;
+  size:string;
+  quantity:number;
+  activeSurfaceId:DesignSurfaceId;
+  surfaces:SurfaceDesignState;
+  supplyMode:SupplyMode;
+  decorationMethod:DecorationMethod;
+};
+
 export function DesignerApp({
   products,
   initialProductId,
+  initialTemplate,
 }: {
   products: ProductOption[];
   initialProductId: string;
+  initialTemplate?:InitialTemplateState|null;
 }) {
   const cart = useCart();
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -144,6 +157,23 @@ export function DesignerApp({
 
   useEffect(() => {
     let cancelled = false;
+
+    if(initialTemplate && products.some(candidate=>candidate.id===initialTemplate.productId)){
+      setProductId(initialTemplate.productId);
+      setColor(initialTemplate.color);
+      setCustomColor(normalizeColor(initialTemplate.color));
+      setSize(initialTemplate.size);
+      setQuantity(Math.max(1,initialTemplate.quantity||1));
+      setActiveSurfaceId(initialTemplate.activeSurfaceId||"full-front");
+      setSide(editorSideForSurface(initialTemplate.activeSurfaceId||"full-front"));
+      setSupplyMode(initialTemplate.supplyMode||"red-umbrella");
+      setDecorationMethod(initialTemplate.decorationMethod||defaultDecorationMethod(initial.slug));
+      replaceDesign(initialTemplate.surfaces||{});
+      setDraftSavedAt(null);
+      setDraftReady(true);
+      return () => { cancelled=true; };
+    }
+
     loadDesignerDraft()
       .then((draft) => {
         if (cancelled || !draft || draft.version !== 2) return;
@@ -167,7 +197,7 @@ export function DesignerApp({
     return () => {
       cancelled = true;
     };
-  }, [products, replaceDesign, initial.slug]);
+  }, [products, replaceDesign, initial.slug, initialTemplate]);
 
   useEffect(() => {
     if (!draftReady) return;
