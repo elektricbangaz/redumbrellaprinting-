@@ -20,3 +20,12 @@ export function generateWorkOrderNumber(): string {
 export function generatePONumber(): string {
   return `PO-${datePart()}-${randomSuffix()}`;
 }
+
+
+export function generateQuoteNumber(): string {
+  return `Q-${datePart()}-${randomSuffix()}`;
+}
+
+export function generateInvoiceNumber(): string {
+  return `INV-${datePart()}-${randomSuffix()}`;
+}
