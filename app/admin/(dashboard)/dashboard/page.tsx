@@ -57,12 +57,11 @@ export default async function AdminDashboardPage(){
     overdue:jobs.filter(overdue).length,
     revenue:todayOrders.filter(o=>o.paymentStatus==="PAID").reduce((s,o)=>s+o.total,0),
   };
-  const quotes=await prisma.order.findMany({
-    include:{items:{include:{product:true}}},
+  const quoteRows=await prisma.quote.findMany({
+    include:{items:true},
     orderBy:{createdAt:"desc"},
-    take:20,
+    take:4,
   });
-  const quoteRows=quotes.filter(order=>order.total===0 || order.notes?.toLowerCase().includes("quote") || order.items.some(i=>!["standard-t-shirt","polo-shirt"].includes(i.product.slug))).slice(0,4);
   const pickups=jobs.filter(j=>j.stage==="READY").slice(0,5);
   const urgent=jobs.filter(j=>overdue(j)||j.priority==="URGENT").slice(0,5);
 
@@ -119,7 +118,7 @@ export default async function AdminDashboardPage(){
 
     <section className="ru-bottom-panels ru-dashboard-panels">
       <article><header><AlertTriangle size={15}/> Urgent / At Risk Jobs <Link href="/job-queue?stage=OVERDUE">View All</Link></header><table><tbody>{urgent.map(j=><tr key={j.id}><td>{j.workOrderNumber}</td><td>{j.order.customerName}</td><td>{product(j)}</td><td className={overdue(j)?"danger-text":""}>{j.dueDate?.toLocaleDateString()||"—"}</td><td>{label(j)}</td></tr>)}</tbody></table>{!urgent.length&&<p className="ru-panel-empty">No urgent jobs.</p>}</article>
-      <article><header>Recent Quotes <Link href="/quotes">View All</Link></header><table><tbody>{quoteRows.map(o=><tr key={o.id}><td>{o.orderNumber}</td><td>{o.customerName}</td><td>{o.items.map(i=>i.product.name).join(", ")}</td><td>{formatJMD(o.total)}</td><td>{o.paymentStatus}</td></tr>)}</tbody></table>{!quoteRows.length&&<p className="ru-panel-empty">No quote-type orders yet.</p>}</article>
+      <article><header>Recent Quotes <Link href="/quotes">View All</Link></header><table><tbody>{quoteRows.map(q=><tr key={q.id}><td><Link href={"/quotes/"+q.id}>{q.quoteNumber}</Link></td><td>{q.customerName}</td><td>{q.jobType}</td><td>{formatJMD(q.total)}</td><td>{q.status}</td></tr>)}</tbody></table>{!quoteRows.length&&<p className="ru-panel-empty">No quote-type orders yet.</p>}</article>
       <article><header><PackageCheck size={15}/> Today&apos;s Pickups & Deliveries <Link href="/pickup-delivery">View All</Link></header><table><tbody>{pickups.map(j=><tr key={j.id}><td>{j.order.customerName}</td><td>{j.workOrderNumber}</td><td>{product(j)}</td><td>Pickup</td><td>Ready</td></tr>)}</tbody></table>{!pickups.length&&<p className="ru-panel-empty">No jobs ready for handoff.</p>}</article>
     </section>
   </div>;
