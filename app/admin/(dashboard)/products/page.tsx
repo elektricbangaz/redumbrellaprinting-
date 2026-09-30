@@ -4,10 +4,22 @@ import { CORE_CATALOG } from "@/lib/catalog";
 
 export const dynamic="force-dynamic";
 
+type AdminCatalogRow = {
+  id:string;
+  name:string;
+  slug:string;
+  category:string;
+  basePrice:number;
+  sizes:string[];
+  active:boolean;
+  quoteOnly:boolean;
+  source:"Canonical"|"Database";
+};
+
 export default async function AdminProductsPage(){
   const rows=await prisma.product.findMany({orderBy:{createdAt:"desc"}});
   const rowMap=new Map(rows.map(row=>[row.slug,row]));
-  const products=CORE_CATALOG.map(source=>{
+  const products:AdminCatalogRow[]=CORE_CATALOG.map(source=>{
     const row=rowMap.get(source.slug);
     return {
       id:row?.id??source.id,
@@ -18,14 +30,14 @@ export default async function AdminProductsPage(){
       sizes:source.sizes,
       active:row?.active??true,
       quoteOnly:source.quoteOnly??source.basePrice<=0,
-      source:"Canonical",
+      source:"Canonical" as const,
     };
   });
   for(const row of rows){
     if(products.some(p=>p.slug===row.slug))continue;
     products.push({
       id:row.id,name:row.name,slug:row.slug,category:row.category,basePrice:row.basePrice,
-      sizes:Array.isArray(row.sizes)?row.sizes as string[]:[],active:row.active,quoteOnly:row.basePrice<=0,source:"Database",
+      sizes:Array.isArray(row.sizes)?row.sizes as string[]:[],active:row.active,quoteOnly:row.basePrice<=0,source:"Database" as const,
     });
   }
   return <div className="ru-page">
