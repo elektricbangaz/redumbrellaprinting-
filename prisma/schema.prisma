@@ -42,7 +42,9 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   designs    Design[]
-  orderItems OrderItem[]
+  orderItems      OrderItem[]
+  templates       DesignTemplate[]
+  inventoryItems  InventoryItem[]
 }
 
 model Customer {
@@ -114,8 +116,9 @@ model Order {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   items      OrderItem[]
-  workOrders WorkOrder[]
-  invoices   Invoice[]
+  workOrders          WorkOrder[]
+  invoices            Invoice[]
+  paymentTransactions PaymentTransaction[]
 }
 
 model OrderItem {
@@ -339,6 +342,7 @@ model Invoice {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   items         InvoiceItem[]
+  payments      PaymentTransaction[]
 
   @@index([status, dueDate])
   @@index([customerId, createdAt])
@@ -353,4 +357,76 @@ model InvoiceItem {
   unitPrice   Int     @default(0)
   lineTotal   Int     @default(0)
   sortOrder   Int     @default(0)
+}
+
+
+model DesignTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  canvasData   Json
+  previewImage String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([productId, active])
+}
+
+model InventoryItem {
+  id           String   @id @default(cuid())
+  sku          String   @unique
+  name         String
+  category     String
+  unit         String   @default("unit")
+  quantity     Float    @default(0)
+  reorderLevel Float    @default(0)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  movements    InventoryMovement[]
+
+  @@index([category, active])
+}
+
+model InventoryMovement {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type            String
+  quantity        Float
+  note            String?
+  changedBy       String?
+  createdAt       DateTime      @default(now())
+
+  @@index([inventoryItemId, createdAt])
+}
+
+model AdminSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentTransaction {
+  id         String           @id @default(cuid())
+  orderId    String?
+  order      Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  invoiceId  String?
+  invoice    Invoice?         @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  provider   PaymentProvider?
+  reference  String?
+  amount     Int
+  currency   String           @default("JMD")
+  status     PaymentStatus
+  source     String           @default("SYSTEM")
+  createdAt  DateTime         @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([invoiceId, createdAt])
+  @@index([status, createdAt])
 }
