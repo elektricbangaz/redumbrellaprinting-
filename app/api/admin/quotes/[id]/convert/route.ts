@@ -9,7 +9,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;
   const quote=await prisma.quote.findUnique({
     where:{id},
-    include:{items:{orderBy:{sortOrder:"asc"}},invoices:{where:{status:{not:"VOID"}},take:1}},
+    include:{items:{orderBy:{sortOrder:"asc"}},invoices:{where:{status:{not:"VOID"}},take:1},design:{select:{productId:true}}},
   });
   if(!quote) return NextResponse.json({error:"Quote not found."},{status:404});
   if(quote.convertedOrderId){
@@ -53,8 +53,9 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         subtotal:quote.subtotal,
         total:quote.total,
         currency:quote.currency,
-        items:{create:quote.items.map(item=>({
-          productId:product.id,
+        items:{create:quote.items.map((item,index)=>({
+          productId:index===0 && quote.design?.productId ? quote.design.productId : product.id,
+          designId:index===0 ? quote.designId : null,
           size:"Quoted specification",
           color:"Custom",
           quantity:item.quantity,
@@ -77,7 +78,30 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
 
     const existingInvoice=quote.invoices[0];
     if(existingInvoice){
-      await tx.invoice.update({where:{id:existingInvoice.id},data:{orderId:created.id}});
+      if(existingInvoice.amountPaid>0 && existingInvoice.total!==quote.total){
+        throw new Error("This quote changed after a payment was recorded. Reconcile the invoice before conversion.");
+      }
+      await tx.invoiceItem.deleteMany({where:{invoiceId:existingInvoice.id}});
+      const nextBalance=Math.max(0,quote.total-existingInvoice.amountPaid);
+      const nextStatus=nextBalance===0 && quote.total>0
+        ? "PAID"
+        : existingInvoice.amountPaid>0
+          ? "PARTIAL"
+          : existingInvoice.status;
+      await tx.invoice.update({
+        where:{id:existingInvoice.id},
+        data:{
+          orderId:created.id,
+          subtotal:quote.subtotal,
+          tax:quote.tax,
+          total:quote.total,
+          balance:nextBalance,
+          status:nextStatus,
+          items:{create:quote.items.map(item=>({
+            description:item.description,quantity:item.quantity,unitPrice:item.unitPrice,lineTotal:item.lineTotal,sortOrder:item.sortOrder,
+          }))},
+        },
+      });
     }else{
       const invoiceDue=new Date(); invoiceDue.setDate(invoiceDue.getDate()+14);
       await tx.invoice.create({
