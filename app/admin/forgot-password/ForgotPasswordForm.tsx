@@ -35,7 +35,7 @@ export default function ForgotPasswordForm() {
 
   return (
     <form className="admin-login-card" onSubmit={submit}>
-      <h1>RED UMBRELLA <span>Admin</span></h1>
+      <img className="admin-login-brand" src="/android-chrome-512x512.png" alt="Red Umbrella Printing" /><h1>Admin</h1>
       <p>Enter your admin email and we’ll send a secure reset link if an account exists.</p>
       {message && <div className="admin-login-success" role="status">{message}</div>}
       {error && <div className="admin-login-error" role="alert">{error}</div>}
