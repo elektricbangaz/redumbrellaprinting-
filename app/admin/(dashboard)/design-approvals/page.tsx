@@ -29,7 +29,7 @@ export default async function AdminDesignApprovalsPage() {
                 <th>Design</th>
                 <th>Customer</th>
                 <th>Product</th>
-                <th>Created</th>
+                <th>Status</th><th>Created</th>
               </tr>
             </thead>
             <tbody>
@@ -40,7 +40,7 @@ export default async function AdminDesignApprovalsPage() {
                   </td>
                   <td>{design.customer?.name ?? design.customer?.email ?? "—"}</td>
                   <td>{design.product.name}</td>
-                  <td>{design.createdAt.toLocaleDateString()}</td>
+                  <td><span className={"ru-status-pill s-"+design.approvalStatus.toLowerCase()}>{design.approvalStatus.replaceAll("_"," ")}</span></td><td>{design.createdAt.toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

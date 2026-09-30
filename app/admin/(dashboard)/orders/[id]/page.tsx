@@ -14,7 +14,7 @@ export default async function AdminOrderDetailPage({
   const { id } = await params;
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { items: { include: { product: true, design: true } }, workOrders: true },
+    include: { items: { include: { product: true, design: true } }, workOrders: true, invoices: { where: { status: { not: "VOID" } }, orderBy: { createdAt: "desc" } } },
   });
   if (!order) notFound();
 
@@ -28,7 +28,7 @@ export default async function AdminOrderDetailPage({
             {order.workOrders[0]?.workOrderNumber ?? "—"}
           </p>
         </div>
-          {order.workOrders[0] && <Link className="button button-red" href="/work-orders">Manage production job</Link>}
+          {order.workOrders[0] && <Link className="button button-red" href={`/jobs?job=${order.workOrders[0].id}`}>Manage production job</Link>}
       </div>
 
       <div className="admin-grid-2">
@@ -66,6 +66,8 @@ export default async function AdminOrderDetailPage({
           </p>
           <h3>Fulfillment</h3>
           <p>Order status: <strong>{order.status.replaceAll("_", " ")}</strong></p>
+          <h3>Invoice</h3>
+          <p>{order.invoices[0] ? <Link href={`/invoices/${order.invoices[0].id}`}>{order.invoices[0].invoiceNumber} →</Link> : "No invoice linked"}</p>
         </div>
       </div>
 

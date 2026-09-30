@@ -22,8 +22,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <kbd>⌘ K</kbd>
           </form>
           <div className="ru-top-actions">
-            <Link href="/orders" className="ru-new-job"><Plus size={16}/> New Job <ChevronDown size={13}/></Link>
-            <Link href="/quotes" className="ru-quick-quote"><FileText size={15}/> Quick Quote</Link>
+            <Link href="/orders/new" className="ru-new-job"><Plus size={16}/> New Job <ChevronDown size={13}/></Link>
+            <Link href="/quotes/new" className="ru-quick-quote"><FileText size={15}/> Quick Quote</Link>
             <Link href="/job-queue?stage=OVERDUE" className="ru-icon-button" aria-label="Notifications"><Bell size={17}/><i>3</i></Link>
             <span className="ru-date"><CalendarDays size={15}/>{today}</span>
             <div className="admin-profile ru-profile">

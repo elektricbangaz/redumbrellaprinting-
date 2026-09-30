@@ -123,7 +123,7 @@ function CheckoutModal({ onClose }: { onClose: () => void }) {
             color: i.color,
             quantity: i.quantity,
             design: i.design
-              ? { canvasData: i.design.canvasData, previewImage: i.design.previewImage }
+              ? { designId: i.design.designId, canvasData: i.design.canvasData, previewImage: i.design.previewImage }
               : undefined,
           })),
         }),

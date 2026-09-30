@@ -10,6 +10,7 @@ import {
 } from "react";
 
 export type CartDesign = {
+  designId?: string;
   canvasData: unknown;
   previewImage: string | null;
 };

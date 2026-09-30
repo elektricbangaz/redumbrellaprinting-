@@ -1,0 +1,42 @@
+name: Full-stack diagnostic push
+
+on:
+  push:
+    branches:
+      - fullstack-wire-platform
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/redumbrella?schema=public
+      AUTH_SECRET: ci-test-secret-only-not-for-production-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci --ignore-scripts
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Typecheck
+        shell: bash
+        run: |
+          set +e
+          npx tsc --noEmit --pretty false > typecheck.log 2>&1
+          echo $? > typecheck-status.txt
+          exit 0
+      - name: Upload diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullstack-push-diagnostic
+          path: |
+            typecheck.log
+            typecheck-status.txt
+          if-no-files-found: warn
+      - name: Show diagnostics
+        if: always()
+        run: cat typecheck.log || true

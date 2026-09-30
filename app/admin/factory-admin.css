@@ -86,3 +86,92 @@
 .ru-dashboard-detail dl{padding:10px 11px!important}.ru-dashboard-panels{grid-template-columns:1.08fr .95fr 1fr!important}.ru-panel-empty{margin:0;padding:16px;text-align:center;font-size:8px;color:#8a949e}
 @media(max-width:1350px){.ru-dashboard-stats{grid-template-columns:repeat(3,1fr)!important}.ru-kanban-seven{grid-template-columns:repeat(7,minmax(165px,1fr))!important}}
 @media(max-width:900px){.ru-content .admin-grid-2,.ru-content .admin-grid-3{grid-template-columns:1fr!important}.ru-content .admin-kanban{grid-template-columns:repeat(4,78vw)!important}.ru-dashboard-board.has-detail{grid-template-columns:1fr!important}.ru-dashboard-detail{order:-1}.ru-dashboard-panels{grid-template-columns:1fr!important}}
+
+/* ===== Readable typography + Wave-style documents ===== */
+.admin-root,.ru-shell,.ru-wallboard{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif!important}
+.ru-page-heading h1,.ru-content .admin-header h1{font-size:clamp(28px,2.2vw,36px)!important;line-height:1.08!important}
+.ru-page-heading p,.ru-content .admin-header p{font-size:14px!important;line-height:1.45!important}
+.ru-nav .admin-nav-link{font-size:13px!important}
+.ru-global-search input,.ru-new-job,.ru-quick-quote,.ru-date{font-size:12px!important}
+.ru-stat-strip small{font-size:12px!important}.ru-stat-strip strong{font-size:26px!important}.ru-stat-strip em{font-size:11px!important}
+.ru-lane>header strong{font-size:14px!important}.ru-lane>header small{font-size:11px!important}.ru-lane>header b{font-size:11px!important}
+.ru-job-card{gap:6px!important}.ru-card-top strong,.ru-job-card>b{font-size:13px!important}.ru-job-card p{font-size:12px!important}.ru-card-meta{font-size:11px!important}
+.ru-priority,.ru-status-pill{font-size:11px!important;padding:4px 7px!important}
+.ru-content .admin-table{font-size:13px!important}.ru-content .admin-table th{font-size:12px!important;height:42px!important}.ru-content .admin-table td{font-size:13px!important;padding:11px 9px!important}.ru-content .admin-table td small{font-size:11px!important}
+.ru-content .admin-toolbar input,.ru-content .admin-toolbar select,.ru-content .admin-toolbar button,.ru-content .admin-toolbar a{font-size:12px!important;height:38px!important}
+.ru-content .admin-kpi-strip small{font-size:12px!important}.ru-content .admin-kpi-strip strong{font-size:24px!important}
+.ru-job-detail dt,.ru-queue-detail dt,.ru-job-detail dd,.ru-queue-detail dd,.ru-detail-block p,.ru-job-notes p{font-size:12px!important}
+.ru-detail-tabs>*{font-size:12px!important}.ru-job-detail-title h2{font-size:18px!important}.ru-job-detail-title p{font-size:12px!important}
+
+.wave-document{background:#fff;border:1px solid #e1e5e9;border-radius:10px;padding:28px;box-shadow:0 2px 8px rgba(16,24,40,.04);max-width:1180px;margin:0 auto;display:grid;gap:24px}
+.wave-document-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;border-bottom:1px solid #e7eaee;padding-bottom:20px}
+.wave-kicker{font-size:12px;font-weight:850;letter-spacing:.14em;color:#e11420}.wave-document-head h1{font-size:36px;line-height:1;margin:6px 0 5px;letter-spacing:-.035em}.wave-document-head p{margin:0;color:#667085;font-size:14px}
+.wave-document-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.wave-document-actions select{height:38px;border:1px solid #d9dee4;border-radius:6px;background:#fff;padding:0 10px;font-size:13px}
+.wave-meta-grid{display:grid;grid-template-columns:1.5fr repeat(3,minmax(140px,.75fr));gap:18px;padding:18px;background:#f8f9fa;border-radius:8px}
+.wave-meta-grid>div,.wave-meta-grid>label{display:grid;align-content:start;gap:5px}.wave-meta-grid small,.wave-notes small{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#667085;font-weight:800}.wave-meta-grid strong{font-size:15px}.wave-meta-grid span{font-size:13px;color:#59636e}.wave-meta-grid input{height:36px;border:1px solid #d8dde2;border-radius:5px;padding:0 8px;font-size:13px;background:#fff}
+.wave-brief{border-left:3px solid #e11420;padding:4px 0 4px 14px}.wave-brief h2{margin:0 0 7px;font-size:18px}.wave-brief p{white-space:pre-line;margin:0;color:#4e5964;font-size:14px;line-height:1.55}.wave-brief a{display:inline-block;margin-top:9px;color:#d91420;font-size:13px;font-weight:750}
+.wave-lines{display:grid;border:1px solid #e2e6ea;border-radius:8px;overflow:hidden}.wave-line{display:grid;grid-template-columns:minmax(260px,1fr) 90px 140px 150px 40px;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid #eceff2}.wave-line:last-of-type{border-bottom:0}.wave-line-head{background:#f5f7f8;font-size:11px;font-weight:800;color:#606b76;text-transform:uppercase;letter-spacing:.05em}.wave-line input{height:38px;border:1px solid #d9dee3;border-radius:5px;padding:0 8px;font-size:13px;min-width:0}.wave-line strong{font-size:13px;text-align:right}.wave-line>button{width:32px;height:32px;border:0;background:transparent;color:#98a2ad;display:grid;place-items:center}.wave-line>button:hover{color:#e11420}.wave-line-readonly>span{font-size:13px}.wave-line-readonly>span:nth-child(2),.wave-line-readonly>span:nth-child(3){text-align:right}
+.wave-add-line{width:max-content;margin:10px;border:1px solid #d8dde2;background:#fff;border-radius:6px;height:36px;padding:0 11px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:750}
+.wave-document-foot{display:grid;grid-template-columns:1fr 340px;gap:30px;align-items:start}.wave-notes{display:grid;gap:7px}.wave-notes textarea{border:1px solid #d9dee3;border-radius:6px;padding:10px;font:inherit;font-size:13px;resize:vertical}.wave-totals{display:grid;gap:10px}.wave-totals>div,.wave-totals>label{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px;font-size:13px}.wave-totals strong{text-align:right}.wave-totals input{height:36px;border:1px solid #d9dee3;border-radius:5px;padding:0 8px;text-align:right;font-size:13px}.wave-totals .total{padding-top:11px;border-top:1px solid #dfe3e7;font-size:18px}.wave-totals .balance{margin-top:4px;padding:12px;background:#fff3f4;border-radius:6px;color:#b30f18;font-size:16px}.wave-save-message{margin:0;padding:10px 12px;border-radius:6px;background:#f2f7f4;color:#166a45;font-size:12px;font-weight:700}
+
+@media(max-width:1180px){
+ .ru-shell{grid-template-columns:1fr!important}
+ .ru-sidebar{position:relative!important;height:auto!important;min-height:0!important;padding:0 12px!important;display:flex!important;align-items:center!important;gap:12px!important}
+ .ru-brand{display:flex!important;min-width:76px!important;width:76px!important;height:64px!important;min-height:64px!important;border-bottom:0!important;margin:0!important}
+ .ru-brand .admin-brand-logo-full{width:54px!important;height:54px!important}
+ .ru-nav{display:flex!important;flex:1!important;overflow-x:auto!important;gap:4px!important;padding:8px 0!important}
+ .ru-nav .admin-nav-link{flex:0 0 auto!important;height:42px!important;padding:0 12px!important}
+ .ru-topbar{position:relative!important}
+ .ru-kanban{grid-template-columns:repeat(5,minmax(220px,1fr))!important}
+ .ru-kanban-seven{grid-template-columns:repeat(7,minmax(210px,1fr))!important}
+ .ru-board-layout.has-detail,.ru-dashboard-board.has-detail{grid-template-columns:1fr!important}
+ .ru-job-detail,.ru-dashboard-detail{order:-1}
+ .wave-meta-grid{grid-template-columns:1fr 1fr}.wave-document-foot{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ .ru-content{padding:12px!important}
+ .ru-topbar{height:auto!important;min-height:64px!important;align-items:stretch!important;gap:8px!important;flex-direction:column!important;padding:8px 10px!important}
+ .ru-global-search{width:100%!important}.ru-top-actions{width:100%;overflow-x:auto;justify-content:flex-start!important}.ru-date,.ru-profile{display:none!important}
+ .ru-stat-strip,.ru-stat-strip.queue,.ru-stat-strip.staff,.ru-dashboard-stats{grid-template-columns:1fr 1fr!important}
+ .ru-page-heading h1,.ru-content .admin-header h1{font-size:28px!important}
+ .ru-page-tools{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}.ru-page-tools input{width:100%!important}
+ .ru-kanban,.ru-kanban-seven{grid-template-columns:repeat(7,84vw)!important}
+ .wave-document{padding:16px;border-radius:0;border-left:0;border-right:0}
+ .wave-document-head{flex-direction:column}.wave-document-actions{justify-content:flex-start}
+ .wave-meta-grid{grid-template-columns:1fr}
+ .wave-lines{overflow-x:auto}.wave-line{min-width:760px}
+ .wave-document-foot{grid-template-columns:1fr}.wave-totals>div,.wave-totals>label{grid-template-columns:1fr 120px}
+}
+
+
+/* Operational admin forms: inventory, templates, settings */
+.inventory-manager,.template-manager,.settings-form{display:grid;gap:12px}
+.inventory-add h2,.template-manager h2,.settings-form h2{margin:0 0 14px;font-size:20px;letter-spacing:-.025em}
+.admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.admin-form-row label,.settings-form>section>label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#46515c}
+.admin-form-row input,.admin-form-row select,.settings-form input,.settings-form textarea,.admin-inline-input{
+  width:100%;border:1px solid #d9dee3;border-radius:6px;background:#fff;color:#1f2937;
+  font:inherit;font-size:13px;padding:0 10px;outline:none
+}
+.admin-form-row input,.admin-form-row select,.settings-form input,.admin-inline-input{height:40px}
+.settings-form textarea{padding:10px;resize:vertical}
+.admin-form-row input:focus,.settings-form input:focus,.settings-form textarea:focus,.admin-inline-input:focus{border-color:#798591;box-shadow:0 0 0 2px #1118270a}
+.inventory-adjust{display:grid;grid-template-columns:100px 80px minmax(120px,1fr) 58px;gap:5px;min-width:390px}
+.inventory-adjust select,.inventory-adjust input,.inventory-adjust button{height:32px;border:1px solid #d9dee3;border-radius:5px;background:#fff;padding:0 7px;font-size:11px}
+.inventory-adjust button{background:#17212a;color:#fff;border-color:#17212a;font-weight:750}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.template-card{border:1px solid #e2e6ea;border-radius:8px;background:#fff;overflow:hidden}
+.template-preview{height:150px;background:#f3f4f5;display:grid;place-items:center;color:#9099a3;font-size:11px}
+.template-preview img{width:100%;height:100%;object-fit:contain}
+.template-card-copy{display:grid;gap:5px;padding:12px}.template-card-copy strong{font-size:14px}.template-card-copy small{font-size:11px;color:#6d7781}.template-card-copy p{font-size:12px;color:#59646e;margin:0}.template-card-copy button{margin-top:5px;width:max-content;height:32px;padding:0 10px;border:1px solid #d8dde2;background:#fff;border-radius:5px;font-size:11px;font-weight:750}
+.template-thumb{width:54px;height:42px;object-fit:contain;background:#f4f5f6;border-radius:4px}
+.settings-savebar{position:sticky;bottom:12px;display:flex;align-items:center;gap:12px;width:max-content;padding:10px;background:#fff;border:1px solid #e0e4e8;border-radius:8px;box-shadow:0 8px 26px #1118271a;z-index:5}
+.settings-savebar span{font-size:12px;font-weight:700}.settings-savebar .success{color:#16784d}.settings-savebar .error{color:#c51a24}
+.wave-paid-toggle>span{display:flex;align-items:center;gap:8px;height:40px}.wave-paid-toggle input{width:16px;height:16px}
+
+@media(max-width:760px){
+  .admin-form-row{grid-template-columns:1fr}
+  .template-grid{grid-template-columns:1fr}
+  .inventory-adjust{grid-template-columns:90px 70px 130px 56px}
+  .settings-savebar{width:100%;bottom:6px}
+}

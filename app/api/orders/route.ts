@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { CORE_CATALOG } from "@/lib/catalog";
-import { generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
+import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
 import { buildRedirectUrl } from "@/lib/payments";
+import { calculateDesignerPrice } from "@/lib/designer-pricing";
+import { hasDesignOnSide, type DesignSurfaceId, type SurfaceDesignState } from "@/lib/design-surfaces";
 
 const orderSchema = z.object({
   customer: z.object({
@@ -21,6 +23,7 @@ const orderSchema = z.object({
     color: z.string(),
     quantity: z.number().int().min(1).max(500),
     design: z.object({
+      designId: z.string().optional(),
       canvasData: z.unknown(),
       previewImage: z.string().nullable().optional(),
     }).optional(),
@@ -83,9 +86,37 @@ export async function POST(req: Request) {
   let subtotal = 0;
   const itemsForCreate = items.map((item, index) => {
     const product = resolvedProducts[index]!;
-    const lineTotal = product.basePrice * item.quantity;
+    let unitPrice = product.basePrice;
+
+    const document = item.design?.canvasData && typeof item.design.canvasData === "object"
+      ? item.design.canvasData as Record<string, unknown>
+      : null;
+    if (document?.schemaVersion === 2) {
+      const surfaces = document.surfaces && typeof document.surfaces === "object"
+        ? document.surfaces as unknown as SurfaceDesignState
+        : {};
+      const activeSurfaceId = typeof document.activeSurfaceId === "string"
+        ? document.activeSurfaceId as DesignSurfaceId
+        : undefined;
+      const supplyMode = document.supplyMode === "customer" ? "customer" : "red-umbrella";
+      const calculated = calculateDesignerPrice({
+        productSlug: product.slug,
+        quantity: item.quantity,
+        size: item.size,
+        printZoneId: activeSurfaceId,
+        hasFrontDesign: hasDesignOnSide(surfaces, "front"),
+        hasBackDesign: hasDesignOnSide(surfaces, "back"),
+        supplyMode,
+      });
+      if (calculated.quoteOnly) {
+        throw new Error(`Product ${product.name} requires a production quote for this configuration.`);
+      }
+      unitPrice = calculated.unitPrice;
+    }
+
+    const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
-    return { item, product, lineTotal };
+    return { item, product, unitPrice, lineTotal };
   });
 
   const firstSubmittedDesign = itemsForCreate.find(({ item }) => item.design)?.item.design?.canvasData;
@@ -116,9 +147,15 @@ export async function POST(req: Request) {
       subtotal,
       total: subtotal,
       items: {
-        create: await Promise.all(itemsForCreate.map(async ({ item, product, lineTotal }) => {
+        create: await Promise.all(itemsForCreate.map(async ({ item, product, unitPrice, lineTotal }) => {
           let designId: string | undefined;
-          if (item.design) {
+          if (item.design?.designId) {
+            const existingDesign = await prisma.design.findUnique({ where: { id: item.design.designId } });
+            if (existingDesign && existingDesign.productId === product.id) {
+              designId = existingDesign.id;
+            }
+          }
+          if (item.design && !designId) {
             const design = await prisma.design.create({
               data: {
                 productId: product.id,
@@ -136,7 +173,7 @@ export async function POST(req: Request) {
             size: item.size,
             color: item.color,
             quantity: item.quantity,
-            unitPrice: product.basePrice,
+            unitPrice,
             lineTotal,
           };
         })),
@@ -155,6 +192,33 @@ export async function POST(req: Request) {
             },
           },
         },
+      },
+    },
+  });
+
+  await prisma.invoice.create({
+    data: {
+      invoiceNumber: generateInvoiceNumber(),
+      customerId: customerRecord.id,
+      orderId: order.id,
+      status: "SENT",
+      issueDate: new Date(),
+      dueDate: new Date(),
+      subtotal: order.subtotal,
+      tax: 0,
+      total: order.total,
+      amountPaid: 0,
+      balance: order.total,
+      currency: order.currency,
+      notes: "Storefront order invoice.",
+      items: {
+        create: itemsForCreate.map(({ item, product, unitPrice, lineTotal }, index) => ({
+          description: `${product.name} — ${item.size} / ${item.color}`,
+          quantity: item.quantity,
+          unitPrice,
+          lineTotal,
+          sortOrder: index,
+        })),
       },
     },
   });

@@ -42,7 +42,9 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   designs    Design[]
-  orderItems OrderItem[]
+  orderItems      OrderItem[]
+  templates       DesignTemplate[]
+  inventoryItems  InventoryItem[]
 }
 
 model Customer {
@@ -52,8 +54,17 @@ model Customer {
   phone     String?
   address   String?
   createdAt DateTime @default(now())
-  orders  Order[]
-  designs Design[]
+  orders   Order[]
+  designs  Design[]
+  quotes   Quote[]
+  invoices Invoice[]
+}
+
+enum DesignApprovalStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
 }
 
 model Design {
@@ -64,9 +75,14 @@ model Design {
   customer     Customer? @relation(fields: [customerId], references: [id])
   color        String
   canvasData   Json
-  previewImage String?
-  createdAt    DateTime @default(now())
+  previewImage   String?
+  approvalStatus DesignApprovalStatus @default(PENDING)
+  approvalNote   String?
+  approvedAt     DateTime?
+  approvedBy     String?
+  createdAt      DateTime @default(now())
   orderItems OrderItem[]
+  quotes     Quote[]
 }
 
 enum OrderStatus {
@@ -111,7 +127,9 @@ model Order {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   items      OrderItem[]
-  workOrders WorkOrder[]
+  workOrders          WorkOrder[]
+  invoices            Invoice[]
+  paymentTransactions PaymentTransaction[]
 }
 
 model OrderItem {
@@ -161,6 +179,10 @@ model WorkOrder {
   completedAt      DateTime?
   dueDate          DateTime?
   blockedReason    String?
+  fulfillmentMethod String?
+  trackingNumber    String?
+  handoffAt         DateTime?
+  handoffBy         String?
   notes            String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -242,4 +264,184 @@ model Broadcast {
   createdById String?
   createdBy   AdminUser? @relation(fields: [createdById], references: [id])
   createdAt   DateTime  @default(now())
+}
+
+
+enum QuoteStatus {
+  REQUESTED
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CONVERTED
+  CANCELLED
+}
+
+model Quote {
+  id               String      @id @default(cuid())
+  quoteNumber      String      @unique
+  publicToken      String      @unique @default(cuid())
+  customerId       String
+  customer         Customer    @relation(fields: [customerId], references: [id])
+  designId         String?
+  design           Design?     @relation(fields: [designId], references: [id], onDelete: SetNull)
+  source           String      @default("WEB")
+  status           QuoteStatus @default(REQUESTED)
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  company          String?
+  jobType          String
+  details          String
+  artworkUrl       String?
+  budget           String?
+  issueDate        DateTime    @default(now())
+  validUntil       DateTime?
+  subtotal         Int         @default(0)
+  tax              Int         @default(0)
+  total            Int         @default(0)
+  currency         String      @default("JMD")
+  notes            String?
+  convertedOrderId String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  items            QuoteItem[]
+  invoices         Invoice[]
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+}
+
+model QuoteItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int    @default(1)
+  unitPrice   Int    @default(0)
+  lineTotal   Int    @default(0)
+  sortOrder   Int    @default(0)
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  VOID
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  publicToken   String        @unique @default(cuid())
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  quoteId       String?
+  quote         Quote?        @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  orderId       String?
+  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  subtotal      Int           @default(0)
+  tax           Int           @default(0)
+  total         Int           @default(0)
+  amountPaid    Int           @default(0)
+  balance       Int           @default(0)
+  currency      String        @default("JMD")
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         InvoiceItem[]
+  payments      PaymentTransaction[]
+
+  @@index([status, dueDate])
+  @@index([customerId, createdAt])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Int     @default(0)
+  lineTotal   Int     @default(0)
+  sortOrder   Int     @default(0)
+}
+
+
+model DesignTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  canvasData   Json
+  previewImage String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([productId, active])
+}
+
+model InventoryItem {
+  id           String   @id @default(cuid())
+  sku          String   @unique
+  name         String
+  category     String
+  unit         String   @default("unit")
+  quantity     Float    @default(0)
+  reorderLevel Float    @default(0)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  movements    InventoryMovement[]
+
+  @@index([category, active])
+}
+
+model InventoryMovement {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type            String
+  quantity        Float
+  note            String?
+  changedBy       String?
+  createdAt       DateTime      @default(now())
+
+  @@index([inventoryItemId, createdAt])
+}
+
+model AdminSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentTransaction {
+  id         String           @id @default(cuid())
+  orderId    String?
+  order      Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  invoiceId  String?
+  invoice    Invoice?         @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  provider   PaymentProvider?
+  reference  String?
+  amount     Int
+  currency   String           @default("JMD")
+  status     PaymentStatus
+  source     String           @default("SYSTEM")
+  createdAt  DateTime         @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([invoiceId, createdAt])
+  @@index([status, createdAt])
 }

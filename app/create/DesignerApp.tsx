@@ -55,6 +55,7 @@ import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 import { calculateDesignerPrice, type SupplyMode } from "@/lib/designer-pricing";
 import { useDesignHistory } from "./useDesignHistory";
 import { clearDesignerDraft, loadDesignerDraft, saveDesignerDraft } from "@/lib/designer-draft-db";
+import { useCart } from "@/lib/cart-context";
 
 type ProductOption = {
   id: string;
@@ -83,13 +84,27 @@ function previewModeForProduct(product: ProductOption) {
     (["standard-t-shirt", "polo-shirt", "pullover-hoodie"].includes(product.slug) ? "apparel3d" as const : "flat" as const);
 }
 
+type InitialTemplateState={
+  productId:string;
+  color:string;
+  size:string;
+  quantity:number;
+  activeSurfaceId:DesignSurfaceId;
+  surfaces:SurfaceDesignState;
+  supplyMode:SupplyMode;
+  decorationMethod:DecorationMethod;
+};
+
 export function DesignerApp({
   products,
   initialProductId,
+  initialTemplate,
 }: {
   products: ProductOption[];
   initialProductId: string;
+  initialTemplate?:InitialTemplateState|null;
 }) {
+  const cart = useCart();
   const uploadRef = useRef<HTMLInputElement>(null);
   const initial = products.find((p) => p.id === initialProductId) || products[0];
   const initialPreviewMode = previewModeForProduct(initial);
@@ -133,7 +148,7 @@ export function DesignerApp({
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 761px)");
+    const mq = window.matchMedia("(min-width: 1181px)");
     const sync = () => setPanelOpen(mq.matches);
     sync();
     mq.addEventListener?.("change", sync);
@@ -142,6 +157,23 @@ export function DesignerApp({
 
   useEffect(() => {
     let cancelled = false;
+
+    if(initialTemplate && products.some(candidate=>candidate.id===initialTemplate.productId)){
+      setProductId(initialTemplate.productId);
+      setColor(initialTemplate.color);
+      setCustomColor(normalizeColor(initialTemplate.color));
+      setSize(initialTemplate.size);
+      setQuantity(Math.max(1,initialTemplate.quantity||1));
+      setActiveSurfaceId(initialTemplate.activeSurfaceId||"full-front");
+      setSide(editorSideForSurface(initialTemplate.activeSurfaceId||"full-front"));
+      setSupplyMode(initialTemplate.supplyMode||"red-umbrella");
+      setDecorationMethod(initialTemplate.decorationMethod||defaultDecorationMethod(initial.slug));
+      replaceDesign(initialTemplate.surfaces||{});
+      setDraftSavedAt(null);
+      setDraftReady(true);
+      return () => { cancelled=true; };
+    }
+
     loadDesignerDraft()
       .then((draft) => {
         if (cancelled || !draft || draft.version !== 2) return;
@@ -165,7 +197,7 @@ export function DesignerApp({
     return () => {
       cancelled = true;
     };
-  }, [products, replaceDesign, initial.slug]);
+  }, [products, replaceDesign, initial.slug, initialTemplate]);
 
   useEffect(() => {
     if (!draftReady) return;
@@ -283,7 +315,7 @@ export function DesignerApp({
     setSelectedId(null);
     setEditMode(true);
     setActiveTool("start");
-    setPanelOpen(window.matchMedia("(min-width: 761px)").matches);
+    setPanelOpen(window.matchMedia("(min-width: 1181px)").matches);
   }
 
   function selectProduct(id: string) {
@@ -512,7 +544,28 @@ export function DesignerApp({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to save design.");
-      setReference(data.reference);
+
+      if (!quoteOnly && typeof pricing.unitPrice === "number") {
+        cart.addItem({
+          productId: product.id,
+          productSlug: product.slug,
+          productName: product.name,
+          productImage: product.images[0] || "",
+          color: customColor,
+          size,
+          quantity,
+          unitPrice: pricing.unitPrice,
+          design: {
+            designId: data.designId || undefined,
+            canvasData: designDocument,
+            previewImage: data.assets?.preview || finalPreview || null,
+          },
+        });
+        setCompleteOpen(false);
+      } else {
+        setReference(data.quoteNumber || data.reference);
+      }
+
       await clearDesignerDraft().catch(() => {});
     } catch (error) {
       setCompleteError(error instanceof Error ? error.message : "Unable to save design.");
