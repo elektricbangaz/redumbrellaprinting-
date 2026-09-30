@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateQuoteNumber } from "@/lib/order-numbers";
+import { getBusinessSettings } from "@/lib/business-settings";
 
 const schema=z.object({
   name:z.string().trim().min(2),
@@ -25,6 +26,8 @@ export async function POST(req:Request){
   const parsed=schema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:"Complete the required quote fields.",details:parsed.error.flatten()},{status:400});
   const input=parsed.data;
+  const settings=await getBusinessSettings();
+  const defaultValidUntil=new Date(); defaultValidUntil.setDate(defaultValidUntil.getDate()+settings.quoteValidityDays);
   const customer=await prisma.customer.upsert({
     where:{email:input.email},
     update:{name:input.name,phone:input.phone||undefined},
@@ -48,7 +51,7 @@ export async function POST(req:Request){
       jobType:input.jobType,
       details:input.notes||input.jobType,
       notes:input.notes||null,
-      validUntil:input.validUntil?new Date(input.validUntil):null,
+      validUntil:input.validUntil?new Date(input.validUntil):defaultValidUntil,
       subtotal,total:subtotal,
       items:{create:items},
     },
