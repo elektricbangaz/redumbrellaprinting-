@@ -43,7 +43,6 @@ model Product {
   updatedAt   DateTime  @updatedAt
   designs    Design[]
   orderItems OrderItem[]
-  quotes     Quote[]
 }
 
 model Customer {
@@ -70,6 +69,7 @@ model Design {
   previewImage String?
   createdAt    DateTime @default(now())
   orderItems OrderItem[]
+  quotes     Quote[]
 }
 
 enum OrderStatus {
