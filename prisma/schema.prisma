@@ -18,11 +18,14 @@ model AdminUser {
   name                     String
   passwordHash             String
   role                     AdminRole @default(STAFF)
+  jobTitle                 String?
+  hourlyRate               Int       @default(0)
   passwordResetTokenHash   String?   @unique
   passwordResetExpiresAt   DateTime?
   passwordResetRequestedAt DateTime?
   createdAt                DateTime  @default(now())
   broadcasts               Broadcast[]
+  productionSessions       ProductionSession[]
 }
 
 model Product {
@@ -31,14 +34,13 @@ model Product {
   slug        String    @unique
   category    String
   description String?
-  basePrice   Int // stored in cents (JMD minor unit)
-  colors      Json      // string[]
-  sizes       Json      // string[]
-  images      Json      // string[]
+  basePrice   Int
+  colors      Json
+  sizes       Json
+  images      Json
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   designs    Design[]
   orderItems OrderItem[]
 }
@@ -50,7 +52,6 @@ model Customer {
   phone     String?
   address   String?
   createdAt DateTime @default(now())
-
   orders  Order[]
   designs Design[]
 }
@@ -62,10 +63,9 @@ model Design {
   customerId   String?
   customer     Customer? @relation(fields: [customerId], references: [id])
   color        String
-  canvasData   Json // { front: Layer[], back: Layer[] }
+  canvasData   Json
   previewImage String?
   createdAt    DateTime @default(now())
-
   orderItems OrderItem[]
 }
 
@@ -92,25 +92,24 @@ enum PaymentStatus {
 }
 
 model Order {
-  id              String          @id @default(cuid())
-  orderNumber     String          @unique
-  customerId      String?
-  customer        Customer?       @relation(fields: [customerId], references: [id])
-  customerEmail   String
-  customerName    String
-  customerPhone   String?
-  shippingAddress String?
-  notes           String?
-  status          OrderStatus     @default(PENDING_PAYMENT)
-  paymentProvider PaymentProvider?
-  paymentStatus   PaymentStatus   @default(UNPAID)
+  id               String          @id @default(cuid())
+  orderNumber      String          @unique
+  customerId       String?
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  customerEmail    String
+  customerName     String
+  customerPhone    String?
+  shippingAddress  String?
+  notes            String?
+  status           OrderStatus     @default(PENDING_PAYMENT)
+  paymentProvider  PaymentProvider?
+  paymentStatus    PaymentStatus   @default(UNPAID)
   paymentReference String?
-  subtotal        Int
-  total           Int
-  currency        String          @default("JMD")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
+  subtotal         Int
+  total            Int
+  currency         String          @default("JMD")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   items      OrderItem[]
   workOrders WorkOrder[]
 }
@@ -145,21 +144,28 @@ enum WorkOrderStage {
 }
 
 model WorkOrder {
-  id              String         @id @default(cuid())
-  workOrderNumber String         @unique
-  orderId         String
-  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  stage           WorkOrderStage @default(SUBMITTED)
-  priority        String         @default("NORMAL")
+  id               String         @id @default(cuid())
+  workOrderNumber  String         @unique
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage            WorkOrderStage @default(SUBMITTED)
+  priority         String         @default("NORMAL")
   productionMethod String?
-  placement       String?
-  assignedTo      String?
-  dueDate         DateTime?
-  blockedReason   String?
-  notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  events          WorkOrderEvent[]
+  productionPhase  String         @default("PRE_PRESS")
+  placement        String?
+  assignedTo       String?
+  machine          String?
+  progress         Int            @default(0)
+  lastWorkedBy     String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  dueDate          DateTime?
+  blockedReason    String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  events           WorkOrderEvent[]
+  sessions         ProductionSession[]
 }
 
 model WorkOrderEvent {
@@ -171,6 +177,23 @@ model WorkOrderEvent {
   note        String?
   changedBy   String?
   createdAt   DateTime       @default(now())
+}
+
+model ProductionSession {
+  id              String    @id @default(cuid())
+  workOrderId     String
+  workOrder       WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  staffId         String
+  staff           AdminUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  durationMinutes Int       @default(0)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+
+  @@index([workOrderId, startedAt])
+  @@index([staffId, startedAt])
+  @@index([active])
 }
 
 enum PurchaseOrderStatus {
@@ -190,7 +213,6 @@ model PurchaseOrder {
   total       Int
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
-
   items PurchaseOrderItem[]
 }
 
