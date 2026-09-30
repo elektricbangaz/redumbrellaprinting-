@@ -8,6 +8,7 @@ type Item={description:string;quantity:number;unitPriceJmd:number};
 type Props={
   id:string;
   quoteNumber:string;
+  publicToken:string;
   status:string;
   issueDate:string;
   validUntil:string|null;
@@ -65,6 +66,12 @@ export function QuoteEditor(props:Props){
     finally{setBusy(false)}
   }
 
+  async function copyCustomerLink(){
+    const url=window.location.origin.replace("admin.","www.")+"/q/"+props.publicToken;
+    try{await navigator.clipboard.writeText(url);setMessage("Customer link copied.");}
+    catch{setMessage("Customer link: "+url);}
+  }
+
   async function sendQuote(){
     const saved=await save();
     if(!saved)return;
@@ -109,7 +116,7 @@ export function QuoteEditor(props:Props){
       <div><span className="wave-kicker">QUOTE</span><h1>{props.quoteNumber}</h1><p>{props.jobType}</p></div>
       <div className="wave-document-actions">
         <select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select>
-        <button className="button button-outline" onClick={save} disabled={busy}>{busy?"Saving…":"Save Quote"}</button><button className="button button-outline" onClick={sendQuote} disabled={busy||total<=0}>Send Quote</button>
+        <button className="button button-outline" onClick={save} disabled={busy}>{busy?"Saving…":"Save Quote"}</button><button className="button button-outline" onClick={copyCustomerLink} disabled={busy}>Copy Link</button><button className="button button-outline" onClick={sendQuote} disabled={busy||total<=0}>Send Quote</button>
         <button className="button button-outline" onClick={createInvoice} disabled={busy||total<=0}>Create Invoice</button><button className="button button-red" onClick={convertToJob} disabled={busy||total<=0||status!=="ACCEPTED"}>Convert to Job</button>
       </div>
     </header>
