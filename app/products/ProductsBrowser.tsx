@@ -1,4 +1,5 @@
 "use client";
+import { ProductImage } from "@/components/ProductImage";
 import { useMemo,useState } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import { formatJMD } from "@/lib/money";
@@ -12,7 +13,7 @@ export function ProductsBrowser({products,initialQuery="",initialCategory=""}:{p
   <div className="catalog-toolbar"><label><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products…"/></label><div className="catalog-chips"><button className={!category?"active":""} onClick={()=>setCategory("")}>All</button>{categories.map(c=><button key={c} className={category===c?"active":""} onClick={()=>setCategory(c)}>{c}</button>)}</div></div>
   <div className="catalog-count">{filtered.length} product{filtered.length===1?"":"s"}</div>
   <div className="catalog-grid">{filtered.map(p=><article key={p.id} className="catalog-card">
-    <a href={`/products/${p.slug}`} className="catalog-image"><img src={p.images[0]} alt={p.name}/></a>
+    <a href={`/products/${p.slug}`} className="catalog-image"><ProductImage src={p.images[0]} alt={p.name}/></a>
     <div className="catalog-body"><span>{p.category}</span><h2><a href={`/products/${p.slug}`}>{p.name}</a></h2><p>{p.description}</p><div><strong>{p.quoteOnly||p.basePrice<=0?"Custom quote":formatJMD(p.basePrice)}</strong><a href={p.quoteOnly?`/quote?product=${p.slug}`:`/create?product=${p.slug}`}>{p.quoteOnly?"Request Quote":"Customize"} <ArrowRight/></a></div></div>
   </article>)}</div>
   {!filtered.length&&<div className="catalog-empty"><h2>No products found.</h2><p>Try another search or request a custom quote for something outside the standard catalog.</p><a className="sf-primary" href="/quote">Request a Quote</a></div>}
