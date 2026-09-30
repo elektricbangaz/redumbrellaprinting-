@@ -135,7 +135,7 @@ export function DesignerApp({
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 761px)");
+    const mq = window.matchMedia("(min-width: 1181px)");
     const sync = () => setPanelOpen(mq.matches);
     sync();
     mq.addEventListener?.("change", sync);
@@ -285,7 +285,7 @@ export function DesignerApp({
     setSelectedId(null);
     setEditMode(true);
     setActiveTool("start");
-    setPanelOpen(window.matchMedia("(min-width: 761px)").matches);
+    setPanelOpen(window.matchMedia("(min-width: 1181px)").matches);
   }
 
   function selectProduct(id: string) {
