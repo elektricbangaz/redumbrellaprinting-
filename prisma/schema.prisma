@@ -264,6 +264,7 @@ enum QuoteStatus {
 model Quote {
   id               String      @id @default(cuid())
   quoteNumber      String      @unique
+  publicToken      String      @unique @default(cuid())
   customerId       String
   customer         Customer    @relation(fields: [customerId], references: [id])
   designId         String?
@@ -318,6 +319,7 @@ enum InvoiceStatus {
 model Invoice {
   id            String        @id @default(cuid())
   invoiceNumber String        @unique
+  publicToken   String        @unique @default(cuid())
   customerId    String
   customer      Customer      @relation(fields: [customerId], references: [id])
   quoteId       String?
