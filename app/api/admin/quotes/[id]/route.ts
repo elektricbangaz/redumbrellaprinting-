@@ -22,7 +22,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const parsed=schema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success) return NextResponse.json({error:"Invalid quote update.",details:parsed.error.flatten()},{status:400});
   const {id}=await params;
-  const existing=await prisma.quote.findUnique({where:{id}});
+  const existing=await prisma.quote.findUnique({where:{id},include:{invoices:{where:{status:{not:"VOID"}},take:1}}});
   if(!existing) return NextResponse.json({error:"Quote not found."},{status:404});
 
   const itemData=parsed.data.items?.map((item,index)=>{
@@ -32,13 +32,18 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const subtotal=itemData?.reduce((sum,item)=>sum+item.lineTotal,0) ?? existing.subtotal;
   const tax=parsed.data.taxJmd!==undefined ? Math.round(parsed.data.taxJmd*100) : existing.tax;
   const total=subtotal+tax;
+  const linkedInvoice=existing.invoices[0];
+  const pricingChanged=subtotal!==existing.subtotal || tax!==existing.tax;
+  if(linkedInvoice?.amountPaid && pricingChanged){
+    return NextResponse.json({error:"This quote has a recorded payment. Reconcile or void the invoice before repricing it."},{status:409});
+  }
 
   const quote=await prisma.$transaction(async(tx)=>{
     if(itemData){
       await tx.quoteItem.deleteMany({where:{quoteId:id}});
       await tx.quoteItem.createMany({data:itemData.map(item=>({...item,quoteId:id}))});
     }
-    return tx.quote.update({
+    const updatedQuote=await tx.quote.update({
       where:{id},
       data:{
         ...(parsed.data.status?{status:parsed.data.status}:{}),
@@ -48,6 +53,24 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
       },
       include:{items:{orderBy:{sortOrder:"asc"}}},
     });
+
+    if(linkedInvoice && pricingChanged){
+      await tx.invoiceItem.deleteMany({where:{invoiceId:linkedInvoice.id}});
+      await tx.invoice.update({
+        where:{id:linkedInvoice.id},
+        data:{
+          subtotal,tax,total,balance:total,
+          items:{create:(itemData ?? updatedQuote.items).map((item,index)=>({
+            description:item.description,
+            quantity:item.quantity,
+            unitPrice:item.unitPrice,
+            lineTotal:item.lineTotal,
+            sortOrder:"sortOrder" in item ? item.sortOrder : index,
+          }))},
+        },
+      });
+    }
+    return updatedQuote;
   });
   return NextResponse.json({ok:true,quote});
 }
