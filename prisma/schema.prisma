@@ -43,6 +43,7 @@ model Product {
   updatedAt   DateTime  @updatedAt
   designs    Design[]
   orderItems OrderItem[]
+  quotes     Quote[]
 }
 
 model Customer {
@@ -52,8 +53,10 @@ model Customer {
   phone     String?
   address   String?
   createdAt DateTime @default(now())
-  orders  Order[]
-  designs Design[]
+  orders   Order[]
+  designs  Design[]
+  quotes   Quote[]
+  invoices Invoice[]
 }
 
 model Design {
@@ -112,6 +115,7 @@ model Order {
   updatedAt        DateTime        @updatedAt
   items      OrderItem[]
   workOrders WorkOrder[]
+  invoices   Invoice[]
 }
 
 model OrderItem {
@@ -242,4 +246,109 @@ model Broadcast {
   createdById String?
   createdBy   AdminUser? @relation(fields: [createdById], references: [id])
   createdAt   DateTime  @default(now())
+}
+
+
+enum QuoteStatus {
+  REQUESTED
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CONVERTED
+  CANCELLED
+}
+
+model Quote {
+  id               String      @id @default(cuid())
+  quoteNumber      String      @unique
+  customerId       String
+  customer         Customer    @relation(fields: [customerId], references: [id])
+  designId         String?
+  design           Design?     @relation(fields: [designId], references: [id], onDelete: SetNull)
+  source           String      @default("WEB")
+  status           QuoteStatus @default(REQUESTED)
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  company          String?
+  jobType          String
+  details          String
+  artworkUrl       String?
+  budget           String?
+  issueDate        DateTime    @default(now())
+  validUntil       DateTime?
+  subtotal         Int         @default(0)
+  tax              Int         @default(0)
+  total            Int         @default(0)
+  currency         String      @default("JMD")
+  notes            String?
+  convertedOrderId String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  items            QuoteItem[]
+  invoices         Invoice[]
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+}
+
+model QuoteItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int    @default(1)
+  unitPrice   Int    @default(0)
+  lineTotal   Int    @default(0)
+  sortOrder   Int    @default(0)
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIAL
+  PAID
+  OVERDUE
+  VOID
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  quoteId       String?
+  quote         Quote?        @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  orderId       String?
+  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  subtotal      Int           @default(0)
+  tax           Int           @default(0)
+  total         Int           @default(0)
+  amountPaid    Int           @default(0)
+  balance       Int           @default(0)
+  currency      String        @default("JMD")
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         InvoiceItem[]
+
+  @@index([status, dueDate])
+  @@index([customerId, createdAt])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Int     @default(0)
+  lineTotal   Int     @default(0)
+  sortOrder   Int     @default(0)
 }
