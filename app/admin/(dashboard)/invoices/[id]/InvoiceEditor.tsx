@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Props={
-  id:string; invoiceNumber:string; status:string; issueDate:string; dueDate:string|null;
+  id:string; invoiceNumber:string; publicToken:string; status:string; issueDate:string; dueDate:string|null;
   customerName:string; customerEmail:string; customerPhone:string|null;
   subtotalJmd:number; taxJmd:number; totalJmd:number; amountPaidJmd:number; balanceJmd:number;
   notes:string|null; items:{description:string;quantity:number;unitPriceJmd:number;lineTotalJmd:number}[];
@@ -20,6 +20,11 @@ export function InvoiceEditor(props:Props){
  const [amountPaidJmd,setAmountPaidJmd]=useState(props.amountPaidJmd);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
+ async function copyCustomerLink(){
+  const url=window.location.origin.replace("admin.","www.")+"/i/"+props.publicToken;
+  try{await navigator.clipboard.writeText(url);setMessage("Customer link copied.");}
+  catch{setMessage("Customer link: "+url);}
+ }
  async function sendInvoice(){
   setBusy(true);setMessage("");
   try{
@@ -43,7 +48,7 @@ export function InvoiceEditor(props:Props){
  return <div className="wave-document">
   <header className="wave-document-head">
    <div><span className="wave-kicker">INVOICE</span><h1>{props.invoiceNumber}</h1><p>{props.customerName}</p></div>
-   <div className="wave-document-actions"><select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select><button className="button button-outline" onClick={sendInvoice} disabled={busy}>Send Invoice</button><button className="button button-red" onClick={save} disabled={busy}>{busy?"Saving…":"Save Invoice"}</button></div>
+   <div className="wave-document-actions"><select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select><button className="button button-outline" onClick={copyCustomerLink} disabled={busy}>Copy Link</button><button className="button button-outline" onClick={sendInvoice} disabled={busy}>Send Invoice</button><button className="button button-red" onClick={save} disabled={busy}>{busy?"Saving…":"Save Invoice"}</button></div>
   </header>
   <section className="wave-meta-grid">
    <div><small>Bill to</small><strong>{props.customerName}</strong><span>{props.customerEmail}</span>{props.customerPhone&&<span>{props.customerPhone}</span>}</div>
