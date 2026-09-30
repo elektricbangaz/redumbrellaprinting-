@@ -43,7 +43,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
   if (!token) {
     return <div className="admin-login-card">
-      <h1>RED UMBRELLA <span>Admin</span></h1>
+      <img className="admin-login-brand" src="/android-chrome-512x512.png" alt="Red Umbrella Printing" /><h1>Admin</h1>
       <p>This reset link is invalid or expired. Request a new one.</p>
       <Link className="button button-red" href="/forgot-password">Request a new link</Link>
     </div>;
@@ -51,7 +51,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form className="admin-login-card" onSubmit={submit}>
-      <h1>RED UMBRELLA <span>Admin</span></h1>
+      <img className="admin-login-brand" src="/android-chrome-512x512.png" alt="Red Umbrella Printing" /><h1>Admin</h1>
       <p>Choose a new password for your admin account. Use 16–72 characters.</p>
       {message && <div className="admin-login-success" role="status">{message}</div>}
       {error && <div className="admin-login-error" role="alert">{error}</div>}
