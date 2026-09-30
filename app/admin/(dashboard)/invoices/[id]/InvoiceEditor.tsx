@@ -20,6 +20,16 @@ export function InvoiceEditor(props:Props){
  const [amountPaidJmd,setAmountPaidJmd]=useState(props.amountPaidJmd);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
+ async function sendInvoice(){
+  setBusy(true);setMessage("");
+  try{
+   const res=await fetch("/api/admin/invoices/"+props.id+"/send",{method:"POST"});
+   const data=await res.json();if(!res.ok)throw new Error(data.error||"Could not send invoice.");
+   if(status==="DRAFT")setStatus("SENT");
+   setMessage("Invoice sent. Customer link: "+data.url);router.refresh();
+  }catch(error){setMessage(error instanceof Error?error.message:"Could not send invoice.")}
+  finally{setBusy(false)}
+ }
  async function save(){
   setBusy(true);setMessage("");
   try{
@@ -33,7 +43,7 @@ export function InvoiceEditor(props:Props){
  return <div className="wave-document">
   <header className="wave-document-head">
    <div><span className="wave-kicker">INVOICE</span><h1>{props.invoiceNumber}</h1><p>{props.customerName}</p></div>
-   <div className="wave-document-actions"><select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select><button className="button button-red" onClick={save} disabled={busy}>{busy?"Saving…":"Save Invoice"}</button></div>
+   <div className="wave-document-actions"><select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select><button className="button button-outline" onClick={sendInvoice} disabled={busy}>Send Invoice</button><button className="button button-red" onClick={save} disabled={busy}>{busy?"Saving…":"Save Invoice"}</button></div>
   </header>
   <section className="wave-meta-grid">
    <div><small>Bill to</small><strong>{props.customerName}</strong><span>{props.customerEmail}</span>{props.customerPhone&&<span>{props.customerPhone}</span>}</div>
