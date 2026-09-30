@@ -39,6 +39,8 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   });
 
   const dueDate=quote.validUntil ?? null;
+  const existingInvoice=quote.invoices[0];
+  const alreadyPaid=Boolean(existingInvoice && existingInvoice.total>0 && existingInvoice.amountPaid>=quote.total);
   const order=await prisma.$transaction(async(tx)=>{
     const created=await tx.order.create({
       data:{
@@ -48,8 +50,8 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         customerName:quote.customerName,
         customerPhone:quote.customerPhone,
         notes:`Converted from ${quote.quoteNumber}.\n${quote.details}`,
-        status:"PENDING_PAYMENT",
-        paymentStatus:"UNPAID",
+        status:alreadyPaid?"PAID":"PENDING_PAYMENT",
+        paymentStatus:alreadyPaid?"PAID":"UNPAID",
         subtotal:quote.subtotal,
         total:quote.total,
         currency:quote.currency,
@@ -64,19 +66,20 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         }))},
         workOrders:{create:{
           workOrderNumber:generateWorkOrderNumber(),
-          stage:"APPROVED",
+          stage:alreadyPaid?"QUEUED":"APPROVED",
           dueDate,
           notes:`Approved quote ${quote.quoteNumber}: ${quote.jobType}`,
           events:{create:{
-            toStage:"APPROVED",
-            note:`Created from accepted quote ${quote.quoteNumber}; awaiting payment/queueing.`,
+            toStage:alreadyPaid?"QUEUED":"APPROVED",
+            note:alreadyPaid
+              ? `Created from accepted quote ${quote.quoteNumber}; invoice already paid, released to queue.`
+              : `Created from accepted quote ${quote.quoteNumber}; awaiting payment/queueing.`,
             changedBy:session.user.email ?? session.user.name ?? "Admin",
           }},
         }},
       },
     });
 
-    const existingInvoice=quote.invoices[0];
     if(existingInvoice){
       if(existingInvoice.amountPaid>0 && existingInvoice.total!==quote.total){
         throw new Error("This quote changed after a payment was recorded. Reconcile the invoice before conversion.");
