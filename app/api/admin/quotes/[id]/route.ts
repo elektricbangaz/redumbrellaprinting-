@@ -65,7 +65,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
             quantity:item.quantity,
             unitPrice:item.unitPrice,
             lineTotal:item.lineTotal,
-            sortOrder:"sortOrder" in item ? item.sortOrder : index,
+            sortOrder:item.sortOrder ?? index,
           }))},
         },
       });
