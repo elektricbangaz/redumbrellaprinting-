@@ -55,6 +55,7 @@ import { GARMENT_MODELS, type PrintZoneId } from "@/lib/garment-models";
 import { calculateDesignerPrice, type SupplyMode } from "@/lib/designer-pricing";
 import { useDesignHistory } from "./useDesignHistory";
 import { clearDesignerDraft, loadDesignerDraft, saveDesignerDraft } from "@/lib/designer-draft-db";
+import { useCart } from "@/lib/cart-context";
 
 type ProductOption = {
   id: string;
@@ -90,6 +91,7 @@ export function DesignerApp({
   products: ProductOption[];
   initialProductId: string;
 }) {
+  const cart = useCart();
   const uploadRef = useRef<HTMLInputElement>(null);
   const initial = products.find((p) => p.id === initialProductId) || products[0];
   const initialPreviewMode = previewModeForProduct(initial);
@@ -512,7 +514,28 @@ export function DesignerApp({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to save design.");
-      setReference(data.reference);
+
+      if (!quoteOnly && typeof pricing.unitPrice === "number") {
+        cart.addItem({
+          productId: product.id,
+          productSlug: product.slug,
+          productName: product.name,
+          productImage: product.images[0] || "",
+          color: customColor,
+          size,
+          quantity,
+          unitPrice: pricing.unitPrice,
+          design: {
+            designId: data.designId || undefined,
+            canvasData: designDocument,
+            previewImage: data.assets?.preview || finalPreview || null,
+          },
+        });
+        setCompleteOpen(false);
+      } else {
+        setReference(data.quoteNumber || data.reference);
+      }
+
       await clearDesignerDraft().catch(() => {});
     } catch (error) {
       setCompleteError(error instanceof Error ? error.message : "Unable to save design.");
