@@ -65,6 +65,18 @@ export function QuoteEditor(props:Props){
     finally{setBusy(false)}
   }
 
+  async function convertToJob(){
+    const saved=await save();
+    if(!saved)return;
+    setBusy(true);setMessage("");
+    try{
+      const res=await fetch("/api/admin/quotes/"+props.id+"/convert",{method:"POST"});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||"Could not convert quote.");
+      router.push("/orders/"+data.orderId);
+    }catch(error){setMessage(error instanceof Error?error.message:"Could not convert quote.");setBusy(false)}
+  }
+
   async function createInvoice(){
     const saved=await save();
     if(!saved)return;
@@ -83,7 +95,7 @@ export function QuoteEditor(props:Props){
       <div className="wave-document-actions">
         <select value={status} onChange={e=>setStatus(e.target.value)}>{statuses.map(s=><option key={s}>{s}</option>)}</select>
         <button className="button button-outline" onClick={save} disabled={busy}>{busy?"Saving…":"Save Quote"}</button>
-        <button className="button button-red" onClick={createInvoice} disabled={busy||total<=0}>Create Invoice</button>
+        <button className="button button-outline" onClick={createInvoice} disabled={busy||total<=0}>Create Invoice</button><button className="button button-red" onClick={convertToJob} disabled={busy||total<=0||status!=="ACCEPTED"}>Convert to Job</button>
       </div>
     </header>
 
