@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       : null;
     if (document?.schemaVersion === 2) {
       const surfaces = document.surfaces && typeof document.surfaces === "object"
-        ? document.surfaces as SurfaceDesignState
+        ? document.surfaces as unknown as SurfaceDesignState
         : {};
       const activeSurfaceId = typeof document.activeSurfaceId === "string"
         ? document.activeSurfaceId as DesignSurfaceId
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
         hasBackDesign: hasDesignOnSide(surfaces, "back"),
         supplyMode,
       });
-      if (calculated.quoteOnly || typeof calculated.unitPrice !== "number") {
+      if (calculated.quoteOnly) {
         throw new Error(`Product ${product.name} requires a production quote for this configuration.`);
       }
       unitPrice = calculated.unitPrice;
