@@ -21,6 +21,7 @@ const orderSchema = z.object({
     color: z.string(),
     quantity: z.number().int().min(1).max(500),
     design: z.object({
+      designId: z.string().optional(),
       canvasData: z.unknown(),
       previewImage: z.string().nullable().optional(),
     }).optional(),
@@ -118,7 +119,13 @@ export async function POST(req: Request) {
       items: {
         create: await Promise.all(itemsForCreate.map(async ({ item, product, lineTotal }) => {
           let designId: string | undefined;
-          if (item.design) {
+          if (item.design?.designId) {
+            const existingDesign = await prisma.design.findUnique({ where: { id: item.design.designId } });
+            if (existingDesign && existingDesign.productId === product.id) {
+              designId = existingDesign.id;
+            }
+          }
+          if (item.design && !designId) {
             const design = await prisma.design.create({
               data: {
                 productId: product.id,
