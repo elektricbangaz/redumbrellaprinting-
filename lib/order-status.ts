@@ -10,6 +10,10 @@ export async function markOrderPaid(orderNumber: string, paymentReference: strin
       where: { orderNumber },
       data: { paymentStatus: "PAID", status: "PAID", paymentReference },
     });
+    await tx.invoice.updateMany({
+      where: { orderId: order.id, status: { not: "VOID" } },
+      data: { status: "PAID", amountPaid: order.total, balance: 0 },
+    });
     const jobs = await tx.workOrder.findMany({ where: { orderId: order.id }, select: { id: true, stage: true } });
     if (jobs.length) {
       await tx.workOrderEvent.createMany({
