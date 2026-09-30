@@ -29,6 +29,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
     else if(amountPaid>0) status="PARTIAL";
   }
 
+  const previousAmountPaid=existing.amountPaid;
   const invoice=await prisma.$transaction(async(tx)=>{
     const updated=await tx.invoice.update({
       where:{id},
@@ -40,6 +41,23 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
         ...(parsed.data.notes!==undefined?{notes:parsed.data.notes}:{}),
       },
     });
+
+    const paidDelta=Math.max(0,amountPaid-previousAmountPaid);
+    if(paidDelta>0){
+      const order=updated.orderId ? await tx.order.findUnique({where:{id:updated.orderId}}) : null;
+      await tx.paymentTransaction.create({
+        data:{
+          orderId:updated.orderId,
+          invoiceId:updated.id,
+          provider:order?.paymentProvider ?? null,
+          reference:null,
+          amount:paidDelta,
+          currency:updated.currency,
+          status:"PAID",
+          source:"ADMIN",
+        },
+      });
+    }
 
     if(updated.orderId && status==="PAID"){
       const order=await tx.order.findUnique({where:{id:updated.orderId}});
