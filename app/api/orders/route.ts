@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { CORE_CATALOG } from "@/lib/catalog";
-import { generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
+import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
 import { buildRedirectUrl } from "@/lib/payments";
 
 const orderSchema = z.object({
@@ -162,6 +162,33 @@ export async function POST(req: Request) {
             },
           },
         },
+      },
+    },
+  });
+
+  await prisma.invoice.create({
+    data: {
+      invoiceNumber: generateInvoiceNumber(),
+      customerId: customerRecord.id,
+      orderId: order.id,
+      status: "SENT",
+      issueDate: new Date(),
+      dueDate: new Date(),
+      subtotal: order.subtotal,
+      tax: 0,
+      total: order.total,
+      amountPaid: 0,
+      balance: order.total,
+      currency: order.currency,
+      notes: "Storefront order invoice.",
+      items: {
+        create: itemsForCreate.map(({ item, product, lineTotal }, index) => ({
+          description: `${product.name} — ${item.size} / ${item.color}`,
+          quantity: item.quantity,
+          unitPrice: product.basePrice,
+          lineTotal,
+          sortOrder: index,
+        })),
       },
     },
   });
