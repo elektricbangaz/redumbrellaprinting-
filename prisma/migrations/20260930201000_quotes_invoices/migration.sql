@@ -1,3 +1,4 @@
+CREATE TYPE "DesignApprovalStatus" AS ENUM ('PENDING','APPROVED','CHANGES_REQUESTED','REJECTED');
 CREATE TYPE "QuoteStatus" AS ENUM ('REQUESTED','DRAFT','SENT','VIEWED','ACCEPTED','DECLINED','EXPIRED','CONVERTED','CANCELLED');
 CREATE TYPE "InvoiceStatus" AS ENUM ('DRAFT','SENT','PARTIAL','PAID','OVERDUE','VOID');
 
@@ -165,3 +166,16 @@ ALTER TABLE "InventoryItem" ADD CONSTRAINT "InventoryItem_productId_fkey" FOREIG
 ALTER TABLE "InventoryMovement" ADD CONSTRAINT "InventoryMovement_inventoryItemId_fkey" FOREIGN KEY ("inventoryItemId") REFERENCES "InventoryItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "Invoice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+
+ALTER TABLE "Design"
+  ADD COLUMN "approvalStatus" "DesignApprovalStatus" NOT NULL DEFAULT 'PENDING',
+  ADD COLUMN "approvalNote" TEXT,
+  ADD COLUMN "approvedAt" TIMESTAMP(3),
+  ADD COLUMN "approvedBy" TEXT;
+
+ALTER TABLE "WorkOrder"
+  ADD COLUMN "fulfillmentMethod" TEXT,
+  ADD COLUMN "trackingNumber" TEXT,
+  ADD COLUMN "handoffAt" TIMESTAMP(3),
+  ADD COLUMN "handoffBy" TEXT;
