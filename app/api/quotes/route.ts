@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getResendClient, FROM_EMAIL } from "@/lib/resend";
 import { generateQuoteNumber } from "@/lib/order-numbers";
+import { getBusinessSettings } from "@/lib/business-settings";
 
 const schema = z.object({
   name: z.string().trim().min(2),
@@ -33,6 +34,8 @@ export async function POST(req: Request) {
   }
 
   const q = parsed.data;
+  const settings=await getBusinessSettings();
+  const validUntil=new Date(); validUntil.setDate(validUntil.getDate()+settings.quoteValidityDays);
   const customer = await prisma.customer.upsert({
     where: { email: q.email },
     update: { name: q.name, phone: q.phone || undefined },
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
       ].filter(Boolean).join("\n"),
       artworkUrl: q.artworkUrl || null,
       budget: q.budget || null,
+      validUntil,
       items: {
         create: {
           description: itemDescription,
@@ -91,7 +95,7 @@ export async function POST(req: Request) {
     const html = `<div style="font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:680px"><h2>New Red Umbrella quote request</h2>${lines.map(([k,v]) => v ? `<p><strong>${k}:</strong> ${escapeHtml(String(v))}</p>` : "").join("")}</div>`;
     await resend.emails.send({
       from: FROM_EMAIL,
-      to: process.env.QUOTE_TO_EMAIL || "orders@redumbrellaprinting.com",
+      to: process.env.QUOTE_TO_EMAIL || settings.notificationEmail,
       replyTo: q.email,
       subject: `[${quote.quoteNumber}] ${q.jobType} quote request`,
       html,
