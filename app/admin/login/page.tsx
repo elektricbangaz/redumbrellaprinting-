@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
   return (
     <div className="admin-login">
       <form className="admin-login-card" onSubmit={submit}>
-        <h1>RED UMBRELLA <span>Admin</span></h1>
+        <img className="admin-login-brand" src="/android-chrome-512x512.png" alt="Red Umbrella Printing" /><h1>Admin</h1>
         <p>Sign in to manage orders, work orders, POs and broadcasts.</p>
         {error && <div className="admin-login-error" role="alert">{error}</div>}
         <label>

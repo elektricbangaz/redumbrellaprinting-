@@ -29,8 +29,7 @@ export default function AdminSidebar() {
   return (
     <aside className="admin-sidebar ru-sidebar">
       <Link className="admin-brand ru-brand" href="/dashboard" aria-label="Red Umbrella Printing admin home">
-        <img className="admin-brand-logo" src="/logo-white.svg" alt="" />
-        <span className="admin-brand-copy"><strong>Red Umbrella</strong><small>PRINTING</small></span>
+        <img className="admin-brand-logo admin-brand-logo-full" src="/android-chrome-512x512.png" alt="Red Umbrella Printing" />
       </Link>
       <nav className="admin-nav ru-nav" aria-label="Admin navigation">
         {items.map(({ href, label, icon: Icon }) => {
