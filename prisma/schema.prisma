@@ -60,6 +60,13 @@ model Customer {
   invoices Invoice[]
 }
 
+enum DesignApprovalStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
 model Design {
   id           String   @id @default(cuid())
   productId    String
@@ -68,8 +75,12 @@ model Design {
   customer     Customer? @relation(fields: [customerId], references: [id])
   color        String
   canvasData   Json
-  previewImage String?
-  createdAt    DateTime @default(now())
+  previewImage   String?
+  approvalStatus DesignApprovalStatus @default(PENDING)
+  approvalNote   String?
+  approvedAt     DateTime?
+  approvedBy     String?
+  createdAt      DateTime @default(now())
   orderItems OrderItem[]
   quotes     Quote[]
 }
@@ -168,6 +179,10 @@ model WorkOrder {
   completedAt      DateTime?
   dueDate          DateTime?
   blockedReason    String?
+  fulfillmentMethod String?
+  trackingNumber    String?
+  handoffAt         DateTime?
+  handoffBy         String?
   notes            String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
