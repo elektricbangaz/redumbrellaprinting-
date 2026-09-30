@@ -1,15 +1,39 @@
-import Link from "next/link";
-import { LayoutTemplate } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { TemplateManager } from "./TemplateManager";
 
-export const dynamic = "force-dynamic";
+export const dynamic="force-dynamic";
 
-export default async function AdminTemplatesPage() {
-  const products = await prisma.product.findMany({ where: { active: true }, orderBy: { name: "asc" }, take: 8 });
-  return <>
-    <div className="admin-header"><div><h1>Templates</h1><p>Reusable artwork and production template library.</p></div></div>
-    <div className="admin-template-notice"><span><LayoutTemplate size={22}/></span><div><strong>Template library is not configured yet</strong><p>There is no saved-template model in the current system. Your live product catalog is available below; customer-submitted designs are under Artwork Review.</p><div><Link href="/catalog">Manage products</Link><Link href="/design-approvals">Review submitted artwork</Link></div></div></div>
-    <div className="admin-header admin-subheader"><div><h2>Active products</h2><p>Products currently available to the storefront.</p></div></div>
-    <div className="admin-card"><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Product</th><th>Category</th><th>Sizes</th><th>Colors</th><th>Action</th></tr></thead><tbody>{products.map((product) => <tr key={product.id}><td>{product.name}</td><td>{product.category}</td><td>{Array.isArray(product.sizes) ? product.sizes.join(", ") : "—"}</td><td>{Array.isArray(product.colors) ? product.colors.join(", ") : "—"}</td><td><Link href="/catalog">Open catalog</Link></td></tr>)}</tbody></table>{products.length === 0 && <div className="admin-empty">No active catalog products found.</div>}</div></div>
-  </>;
+export default async function AdminTemplatesPage(){
+  const [templates,designs]=await Promise.all([
+    prisma.designTemplate.findMany({
+      include:{product:true},
+      orderBy:{updatedAt:"desc"},
+      take:100,
+    }),
+    prisma.design.findMany({
+      include:{product:true,customer:true},
+      orderBy:{createdAt:"desc"},
+      take:50,
+    }),
+  ]);
+  return <div className="ru-page">
+    <div className="admin-header"><div><h1>Templates</h1><p>Reusable artwork and repeat-production templates.</p></div></div>
+    <div className="admin-kpi-strip">
+      <div><small>Total templates</small><strong>{templates.length}</strong></div>
+      <div><small>Active</small><strong>{templates.filter(t=>t.active).length}</strong></div>
+      <div><small>Submitted designs</small><strong>{designs.length}</strong></div>
+    </div>
+    <TemplateManager
+      templates={templates.map(t=>({
+        id:t.id,name:t.name,description:t.description,active:t.active,
+        previewImage:t.previewImage,productName:t.product?.name??null,
+      }))}
+      designs={designs.map(d=>({
+        id:d.id,productName:d.product.name,
+        customer:d.customer?.name??d.customer?.email??"Guest",
+        previewImage:d.previewImage,
+        createdAt:d.createdAt.toLocaleDateString(),
+      }))}
+    />
+  </div>;
 }
