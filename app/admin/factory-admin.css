@@ -30,3 +30,59 @@
 
 /* Brand parity: use the exact storefront logo asset throughout admin. */
 .ru-brand{justify-content:center!important}.ru-brand .admin-brand-logo-full{width:66px!important;height:66px!important;object-fit:contain!important}.admin-login-brand{width:104px;height:104px;object-fit:contain;margin:0 auto 4px}.ru-wallboard>header img{width:54px!important;height:54px!important;object-fit:contain!important;background:#fff;border-radius:50%}
+
+/* === Unified authoritative admin surface — applies the approved visual system to every legacy admin route === */
+.ru-content>.admin-header,.ru-content>form>.admin-header{margin:0 0 12px!important;padding:0!important}
+.ru-content .admin-header{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;flex-wrap:wrap!important}
+.ru-content .admin-header h1{margin:0!important;font-size:25px!important;line-height:1!important;letter-spacing:-.035em!important;color:#101828!important;font-weight:800!important}
+.ru-content .admin-header h2{margin:0!important;font-size:16px!important;color:#101828!important}
+.ru-content .admin-header p{margin:5px 0 0!important;font-size:10px!important;line-height:1.4!important;color:#7a8490!important}
+.ru-content .admin-subheader{margin-top:16px!important}
+.ru-content .admin-card,.ru-content .admin-widget,.ru-content .client-widget{background:#fff!important;border:1px solid #e2e6ea!important;border-radius:6px!important;box-shadow:0 1px 2px #11182708!important;padding:14px!important}
+.ru-content .admin-grid-2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.ru-content .admin-grid-3{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+.ru-content .admin-table-wrap{width:100%!important;overflow:auto!important;border-radius:5px!important}
+.ru-content .admin-table{width:100%!important;border-collapse:collapse!important;background:#fff!important;font-size:9px!important}
+.ru-content .admin-table th{height:34px!important;padding:0 9px!important;text-align:left!important;background:#f7f8f9!important;border-bottom:1px solid #dfe3e7!important;color:#56616c!important;font-size:8px!important;font-weight:800!important;text-transform:none!important;letter-spacing:0!important;white-space:nowrap!important}
+.ru-content .admin-table td{padding:9px!important;border-bottom:1px solid #edf0f2!important;color:#46525d!important;font-size:9px!important;vertical-align:middle!important}
+.ru-content .admin-table tr:hover td{background:#fafcff!important}
+.ru-content .admin-table td a{font-weight:750!important;color:#27343f!important}
+.ru-content .admin-table td small{display:block!important;color:#89939c!important;font-size:7px!important;margin-top:2px!important}
+.ru-content .admin-empty,.ru-content .admin-panel-empty{padding:28px!important;text-align:center!important;color:#8a949e!important;font-size:9px!important}
+.ru-content .admin-kpi-strip{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:8px!important;margin:0 0 12px!important}
+.ru-content .admin-kpi-strip>div{min-height:74px!important;display:grid!important;align-content:center!important;gap:3px!important;background:#fff!important;border:1px solid #e5e9ed!important;border-radius:6px!important;padding:11px 12px!important}
+.ru-content .admin-kpi-strip small{font-size:8px!important;color:#6d7882!important;font-weight:700!important}
+.ru-content .admin-kpi-strip strong{font-size:20px!important;line-height:1!important;color:#111827!important}
+.ru-content .badge{display:inline-flex!important;align-items:center!important;min-height:20px!important;padding:0 7px!important;border-radius:4px!important;font-size:7px!important;font-weight:800!important}
+.ru-content .admin-toolbar{display:flex!important;align-items:center!important;gap:7px!important;margin:0 0 10px!important;flex-wrap:wrap!important}
+.ru-content .admin-toolbar input,.ru-content .admin-toolbar select,.ru-content .admin-toolbar button,.ru-content .admin-toolbar a{height:32px!important;display:inline-flex!important;align-items:center!important;border:1px solid #dfe3e8!important;border-radius:5px!important;background:#fff!important;padding:0 10px!important;color:#52606c!important;font-size:9px!important}
+.ru-content .admin-form{display:grid!important;gap:12px!important}
+.ru-content .admin-form label,.ru-content .job-controls label{display:grid!important;gap:5px!important;font-size:8px!important;font-weight:800!important;color:#4f5b66!important}
+.ru-content .admin-form input,.ru-content .admin-form select,.ru-content .admin-form textarea,.ru-content .job-controls input,.ru-content .job-controls select,.ru-content .job-controls textarea{width:100%!important;border:1px solid #d9dee3!important;border-radius:5px!important;background:#fff!important;padding:9px 10px!important;font-size:9px!important;color:#26323d!important;outline:none!important}
+.ru-content .admin-form input:focus,.ru-content .admin-form select:focus,.ru-content .admin-form textarea:focus,.ru-content .job-controls input:focus,.ru-content .job-controls select:focus,.ru-content .job-controls textarea:focus{border-color:#e11420!important;box-shadow:0 0 0 2px #e1142014!important}
+.ru-content .admin-form-row,.ru-content .job-controls-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.ru-content .button,.ru-content button.button,.ru-content a.button{min-height:32px!important;height:32px!important;border-radius:5px!important;padding:0 11px!important;font-size:9px!important;font-weight:800!important;box-shadow:none!important;transform:none!important}
+.ru-content .button-red{background:#e11420!important;border-color:#e11420!important;color:#fff!important}
+.ru-content .button-outline,.ru-content .button-outline-red{background:#fff!important;border-color:#d9dee3!important;color:#35414d!important}
+.ru-content .admin-kanban{display:grid!important;grid-template-columns:repeat(4,minmax(190px,1fr))!important;gap:8px!important;overflow:auto!important}
+.ru-content .admin-kanban-col{background:#f3f5f6!important;border:1px solid #e2e6ea!important;border-radius:6px!important;padding:8px!important}
+.ru-content .admin-kanban-col h3{margin:0 0 8px!important;font-size:9px!important;letter-spacing:0!important;text-transform:none!important;color:#45515c!important}
+.ru-content .admin-kanban-card{background:#fff!important;border:1px solid #dfe3e7!important;border-radius:5px!important;padding:9px!important;margin:0 0 7px!important;font-size:8px!important;box-shadow:none!important}
+.ru-content .admin-kanban-card b{font-size:9px!important}
+.ru-content .admin-settings-list{display:grid!important;gap:0!important}
+.ru-content .admin-settings-list>div{display:flex!important;justify-content:space-between!important;gap:12px!important;padding:9px 0!important;border-bottom:1px solid #edf0f2!important;font-size:9px!important}
+.ru-content .admin-data-note{margin:0!important;padding:9px 11px!important;border:1px solid #e6e9ed!important;border-radius:5px!important;background:#fafbfc!important;color:#78838d!important;font-size:8px!important;line-height:1.45!important}
+.ru-content .admin-template-notice{display:flex!important;gap:12px!important;align-items:flex-start!important;padding:14px!important;border:1px solid #e2e6ea!important;border-radius:6px!important;background:#fff!important;margin-bottom:12px!important}
+.ru-content .admin-template-notice h2,.ru-content .admin-template-notice strong{font-size:11px!important}.ru-content .admin-template-notice p{font-size:9px!important;color:#68737d!important}
+.ru-content .admin-link-button{color:#d91420!important;font-size:9px!important;font-weight:800!important}
+.admin-login-card{max-width:390px!important;border-radius:8px!important;padding:28px!important;box-shadow:0 18px 55px #00000030!important}
+.admin-login-card>h1{text-align:center!important;font-size:15px!important;margin:0!important}.admin-login-card>p{text-align:center!important;font-size:10px!important;color:#6d7781!important}
+.admin-login-card label{font-size:9px!important}.admin-login-card input{height:38px!important;border-radius:5px!important;font-size:10px!important}.admin-login-card .button{height:38px!important;min-height:38px!important;font-size:10px!important}
+.ru-dashboard-page{gap:10px!important}.ru-dashboard-stats{grid-template-columns:repeat(6,minmax(0,1fr))!important}.ru-dashboard-stats article{height:78px!important}
+.ru-dashboard-stats article:last-child strong{font-size:17px!important}.ru-dashboard-heading{margin-top:2px!important}
+.ru-dashboard-board.has-detail{grid-template-columns:minmax(0,1fr) 285px!important}.ru-kanban-seven{grid-template-columns:repeat(7,minmax(145px,1fr))!important}
+.ru-kanban-seven .ru-lane{min-width:145px!important}.ru-kanban-seven .ru-lane-body{min-height:390px!important}
+.ru-kanban-seven .ru-job-card{padding:8px!important}.ru-kanban-seven .ru-job-card p{font-size:7px!important}.ru-kanban-seven .ru-card-meta{font-size:6.5px!important}
+.ru-dashboard-detail dl{padding:10px 11px!important}.ru-dashboard-panels{grid-template-columns:1.08fr .95fr 1fr!important}.ru-panel-empty{margin:0;padding:16px;text-align:center;font-size:8px;color:#8a949e}
+@media(max-width:1350px){.ru-dashboard-stats{grid-template-columns:repeat(3,1fr)!important}.ru-kanban-seven{grid-template-columns:repeat(7,minmax(165px,1fr))!important}}
+@media(max-width:900px){.ru-content .admin-grid-2,.ru-content .admin-grid-3{grid-template-columns:1fr!important}.ru-content .admin-kanban{grid-template-columns:repeat(4,78vw)!important}.ru-dashboard-board.has-detail{grid-template-columns:1fr!important}.ru-dashboard-detail{order:-1}.ru-dashboard-panels{grid-template-columns:1fr!important}}
