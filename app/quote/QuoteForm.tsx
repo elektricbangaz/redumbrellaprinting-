@@ -6,15 +6,17 @@ export function QuoteForm(){
  const [status,setStatus]=useState<"idle"|"sending"|"done"|"error">("idle");
  const [ref,setRef]=useState("");
  async function submit(e:React.FormEvent<HTMLFormElement>){
-  e.preventDefault(); setStatus("sending");
-  const fd=new FormData(e.currentTarget);
+  e.preventDefault();
+  const form=e.currentTarget;
+  setStatus("sending");
+  const fd=new FormData(form);
   const payload=Object.fromEntries(fd.entries());
   try{
    const res=await fetch("/api/quotes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
    const data=await res.json();
    if(!res.ok) throw new Error(data.error||"Could not submit quote.");
-   setRef(data.reference); setStatus("done"); e.currentTarget.reset();
-  }catch{setStatus("error")}
+   form.reset(); setRef(data.reference); setStatus("done");
+  }catch(error){console.error("[quote-form] submission failed",error);setStatus("error")}
  }
  if(status==="done") return <div className="quote-success"><CheckCircle2/><h2>Quote request received.</h2><p>Your reference is <strong>{ref}</strong>. We have your brief and can review the production requirements from here.</p><a className="sf-primary" href="/products">Browse Products <ArrowRight/></a></div>
  return <form className="quote-form" onSubmit={submit}>
