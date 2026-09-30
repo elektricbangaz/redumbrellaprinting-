@@ -14,8 +14,8 @@ const { auth } = NextAuth(authConfig);
 export default auth((request) => {
   const pathname = request.nextUrl.pathname;
   const requestHost = request.headers.get("host")?.split(":")[0].toLowerCase();
-  const isPreviewAdminHost = process.env.VERCEL_ENV === "preview" && Boolean(requestHost?.endsWith(".vercel.app"));
-  const isAdminHost = (requestHost !== undefined && adminHosts.has(requestHost)) || isPreviewAdminHost;
+  const isPreviewHost = process.env.VERCEL_ENV === "preview" && Boolean(requestHost?.endsWith(".vercel.app"));
+  const isAdminHost = requestHost !== undefined && adminHosts.has(requestHost);
   const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAdminApi = pathname === "/api/admin" || pathname.startsWith("/api/admin/");
   const isPasswordResetApi = pathname === "/api/admin/password-reset/request" || pathname === "/api/admin/password-reset/confirm";
@@ -23,6 +23,22 @@ export default auth((request) => {
   const isCleanAdminRoute = adminRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
   const external = new URL(request.url);
   if (request.headers.get("host")) external.host = request.headers.get("host")!;
+
+  if (isPreviewHost) {
+    if (isAuthApi || isAdminApi || isAdminPath) return NextResponse.next();
+
+    if (isCleanAdminRoute) {
+      const isPublicAdminRoute = pathname === "/login" || pathname === "/forgot-password" || pathname === "/reset-password" || isPasswordResetApi;
+      if (!request.auth?.user && !isPublicAdminRoute) {
+        const login = new URL(external); login.pathname = "/login"; login.search = ""; return NextResponse.redirect(login);
+      }
+      const internal = request.nextUrl.clone();
+      internal.pathname = pathname === "/catalog" ? "/admin/products" : "/admin" + pathname;
+      return NextResponse.rewrite(internal);
+    }
+
+    return NextResponse.next();
+  }
 
   if (!isAdminHost) {
     if (isAdminPath || isAdminApi || isAuthApi || isCleanAdminRoute) return new NextResponse(null, { status: 404 });
