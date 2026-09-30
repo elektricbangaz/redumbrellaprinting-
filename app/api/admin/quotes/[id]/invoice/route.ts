@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNumber } from "@/lib/order-numbers";
+import { getBusinessSettings } from "@/lib/business-settings";
 
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await auth();
@@ -16,8 +17,9 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const existing=await prisma.invoice.findFirst({where:{quoteId:id,status:{not:"VOID"}}});
   if(existing) return NextResponse.json({ok:true,invoiceId:existing.id,invoiceNumber:existing.invoiceNumber});
 
+  const settings=await getBusinessSettings();
   const dueDate=new Date();
-  dueDate.setDate(dueDate.getDate()+14);
+  dueDate.setDate(dueDate.getDate()+settings.invoiceDueDays);
 
   const invoice=await prisma.$transaction(async(tx)=>{
     const created=await tx.invoice.create({
