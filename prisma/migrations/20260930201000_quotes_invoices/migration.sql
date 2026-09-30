@@ -4,6 +4,7 @@ CREATE TYPE "InvoiceStatus" AS ENUM ('DRAFT','SENT','PARTIAL','PAID','OVERDUE','
 CREATE TABLE "Quote" (
   "id" TEXT NOT NULL,
   "quoteNumber" TEXT NOT NULL,
+  "publicToken" TEXT NOT NULL,
   "customerId" TEXT NOT NULL,
   "designId" TEXT,
   "source" TEXT NOT NULL DEFAULT 'WEB',
@@ -43,6 +44,7 @@ CREATE TABLE "QuoteItem" (
 CREATE TABLE "Invoice" (
   "id" TEXT NOT NULL,
   "invoiceNumber" TEXT NOT NULL,
+  "publicToken" TEXT NOT NULL,
   "customerId" TEXT NOT NULL,
   "quoteId" TEXT,
   "orderId" TEXT,
@@ -73,9 +75,11 @@ CREATE TABLE "InvoiceItem" (
 );
 
 CREATE UNIQUE INDEX "Quote_quoteNumber_key" ON "Quote"("quoteNumber");
+CREATE UNIQUE INDEX "Quote_publicToken_key" ON "Quote"("publicToken");
 CREATE INDEX "Quote_status_createdAt_idx" ON "Quote"("status","createdAt");
 CREATE INDEX "Quote_customerId_createdAt_idx" ON "Quote"("customerId","createdAt");
 CREATE UNIQUE INDEX "Invoice_invoiceNumber_key" ON "Invoice"("invoiceNumber");
+CREATE UNIQUE INDEX "Invoice_publicToken_key" ON "Invoice"("publicToken");
 CREATE INDEX "Invoice_status_dueDate_idx" ON "Invoice"("status","dueDate");
 CREATE INDEX "Invoice_customerId_createdAt_idx" ON "Invoice"("customerId","createdAt");
 
