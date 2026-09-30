@@ -6,7 +6,7 @@ import { ProductsBrowser } from "./ProductsBrowser";
 
 export const dynamic = "force-dynamic";
 
-const fallbackProducts = CORE_CATALOG.map(({ colors, sizes, quoteOnly, ...p }) => p);
+const fallbackProducts = CORE_CATALOG.map((p) => ({ ...p }));
 
 export default async function ProductsPage({
   searchParams,
@@ -31,13 +31,14 @@ export default async function ProductsPage({
         return {
           ...row,
           images: source?.images || (row.images as string[]),
+          quoteOnly: source?.quoteOnly ?? row.basePrice <= 0,
+          previewMode: source?.previewMode,
         };
       });
 
       for (const item of CORE_CATALOG) {
         if (!rows.some((row) => row.slug === item.slug)) {
-          const { colors, sizes, quoteOnly, ...display } = item;
-          products.push(display);
+          products.push({ ...item });
         }
       }
     }
