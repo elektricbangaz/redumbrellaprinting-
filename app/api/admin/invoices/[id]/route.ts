@@ -19,7 +19,9 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const existing=await prisma.invoice.findUnique({where:{id}});
   if(!existing) return NextResponse.json({error:"Invoice not found."},{status:404});
 
-  const amountPaid=parsed.data.amountPaidJmd!==undefined?Math.round(parsed.data.amountPaidJmd*100):existing.amountPaid;
+  let amountPaid=parsed.data.amountPaidJmd!==undefined?Math.round(parsed.data.amountPaidJmd*100):existing.amountPaid;
+  if(parsed.data.status==="PAID") amountPaid=existing.total;
+  amountPaid=Math.min(existing.total,Math.max(0,amountPaid));
   const balance=Math.max(0,existing.total-amountPaid);
   let status=parsed.data.status ?? existing.status;
   if(status!=="VOID"){
