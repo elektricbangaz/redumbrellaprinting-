@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ArrowRight, CheckCircle2, UploadCloud } from "lucide-react";
 
-export function QuoteForm(){
+export function QuoteForm({initialJobType=""}:{initialJobType?:string}){
  const [status,setStatus]=useState<"idle"|"sending"|"done"|"error">("idle");
  const [ref,setRef]=useState("");
  async function submit(e:React.FormEvent<HTMLFormElement>){
@@ -25,7 +25,7 @@ export function QuoteForm(){
    <label>Email<input name="email" type="email" required/></label>
    <label>Phone<input name="phone"/></label>
    <label>Company<input name="company"/></label>
-   <label>Job type<select name="jobType" required defaultValue=""><option value="" disabled>Select one</option><option>Custom Signage</option><option>Vehicle Graphics</option><option>Large Format Printing</option><option>Bulk Apparel</option><option>Promotional Merchandise</option><option>Custom Fabrication</option><option>Other</option></select></label>
+   <label>Job type<select name="jobType" required defaultValue={initialJobType}><option value="" disabled>Select one</option><option>Custom Signage</option><option>Vehicle Graphics</option><option>Large Format Printing</option><option>Bulk Apparel</option><option>Promotional Merchandise</option><option>Business Print</option><option>Spandex Tablecloth</option><option>Custom Fabrication</option><option>Other</option></select></label>
    <label>Quantity<input name="quantity" placeholder="e.g. 50"/></label>
    <label>Dimensions / size<input name="dimensions" placeholder="e.g. 8ft × 4ft"/></label>
    <label>Needed by<input name="dueDate" type="date"/></label>
