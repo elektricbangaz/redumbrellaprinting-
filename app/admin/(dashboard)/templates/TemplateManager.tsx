@@ -69,9 +69,12 @@ export function TemplateManager({templates,designs}:{templates:Template[];design
             <strong>{template.name}</strong>
             <small>{template.productName||"General template"}</small>
             {template.description&&<p>{template.description}</p>}
-            <button disabled={busy} onClick={()=>toggleTemplate(template.id,!template.active)}>
-              {template.active?"Archive":"Restore"}
-            </button>
+            <div className="template-card-actions">
+              {template.active&&<a href={"/create?template="+template.id}>Use Template</a>}
+              <button disabled={busy} onClick={()=>toggleTemplate(template.id,!template.active)}>
+                {template.active?"Archive":"Restore"}
+              </button>
+            </div>
           </div>
         </article>)}
         {!templates.length&&<div className="admin-empty">No templates saved yet. Create one from a submitted design below.</div>}
