@@ -27,15 +27,50 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
     else if(amountPaid>0) status="PARTIAL";
   }
 
-  const invoice=await prisma.invoice.update({
-    where:{id},
-    data:{
-      status,
-      amountPaid,
-      balance,
-      ...(parsed.data.dueDate!==undefined?{dueDate:parsed.data.dueDate?new Date(parsed.data.dueDate):null}:{}),
-      ...(parsed.data.notes!==undefined?{notes:parsed.data.notes}:{}),
-    },
+  const invoice=await prisma.$transaction(async(tx)=>{
+    const updated=await tx.invoice.update({
+      where:{id},
+      data:{
+        status,
+        amountPaid,
+        balance,
+        ...(parsed.data.dueDate!==undefined?{dueDate:parsed.data.dueDate?new Date(parsed.data.dueDate):null}:{}),
+        ...(parsed.data.notes!==undefined?{notes:parsed.data.notes}:{}),
+      },
+    });
+
+    if(updated.orderId && status==="PAID"){
+      const order=await tx.order.findUnique({where:{id:updated.orderId}});
+      if(order){
+        const terminal=["IN_PRODUCTION","READY_FOR_PICKUP","COMPLETED"].includes(order.status);
+        await tx.order.update({
+          where:{id:order.id},
+          data:{paymentStatus:"PAID",...(terminal?{}:{status:"PAID"})},
+        });
+        const jobs=await tx.workOrder.findMany({where:{orderId:order.id}});
+        for(const job of jobs){
+          if(job.stage==="APPROVED"){
+            await tx.workOrder.update({where:{id:job.id},data:{stage:"QUEUED"}});
+            await tx.workOrderEvent.create({
+              data:{
+                workOrderId:job.id,fromStage:"APPROVED",toStage:"QUEUED",
+                note:"Invoice paid; job released to production queue.",
+                changedBy:session.user.email ?? session.user.name ?? "Admin",
+              },
+            });
+          }else{
+            await tx.workOrderEvent.create({
+              data:{
+                workOrderId:job.id,fromStage:job.stage,toStage:job.stage,
+                note:"Invoice marked paid.",
+                changedBy:session.user.email ?? session.user.name ?? "Admin",
+              },
+            });
+          }
+        }
+      }
+    }
+    return updated;
   });
   return NextResponse.json({ok:true,invoice});
 }
