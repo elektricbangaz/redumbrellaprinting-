@@ -22,6 +22,7 @@ const schema=z.object({
 export async function POST(req:Request){
   const session=await auth();
   if(!session?.user)return NextResponse.json({error:"Unauthorized"},{status:401});
+  const changedBy=session.user.email??session.user.name??"Admin";
   const parsed=schema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:"Complete the required job fields.",details:parsed.error.flatten()},{status:400});
   const input=parsed.data;
@@ -68,7 +69,7 @@ export async function POST(req:Request){
           events:{create:{
             toStage:input.paid?"QUEUED":"APPROVED",
             note:input.paid?"Counter job created and queued.":"Counter job created; awaiting payment before production.",
-            changedBy:session.user.email??session.user.name??"Admin",
+            changedBy,
           }},
         }},
       },

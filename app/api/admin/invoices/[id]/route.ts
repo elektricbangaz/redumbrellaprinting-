@@ -13,6 +13,7 @@ const schema=z.object({
 export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const session=await auth();
   if(!session?.user) return NextResponse.json({error:"Unauthorized"},{status:401});
+  const changedBy=session.user.email ?? session.user.name ?? "Admin";
   const parsed=schema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success) return NextResponse.json({error:"Invalid invoice update."},{status:400});
   const {id}=await params;
@@ -75,7 +76,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
               data:{
                 workOrderId:job.id,fromStage:"APPROVED",toStage:"QUEUED",
                 note:"Invoice paid; job released to production queue.",
-                changedBy:session.user.email ?? session.user.name ?? "Admin",
+                changedBy,
               },
             });
           }else{
@@ -83,7 +84,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
               data:{
                 workOrderId:job.id,fromStage:job.stage,toStage:job.stage,
                 note:"Invoice marked paid.",
-                changedBy:session.user.email ?? session.user.name ?? "Admin",
+                changedBy,
               },
             });
           }

@@ -21,7 +21,7 @@ export async function POST(req:Request){
       name:parsed.data.name,
       description:parsed.data.description||null,
       productId:design.productId,
-      canvasData:design.canvasData,
+      canvasData:design.canvasData ?? {},
       previewImage:design.previewImage,
       active:true,
     },

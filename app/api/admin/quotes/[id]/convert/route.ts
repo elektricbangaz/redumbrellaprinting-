@@ -6,6 +6,7 @@ import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } f
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await auth();
   if(!session?.user) return NextResponse.json({error:"Unauthorized"},{status:401});
+  const changedBy=session.user.email ?? session.user.name ?? "Admin";
   const {id}=await params;
   const quote=await prisma.quote.findUnique({
     where:{id},
@@ -74,7 +75,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
             note:alreadyPaid
               ? `Created from accepted quote ${quote.quoteNumber}; invoice already paid, released to queue.`
               : `Created from accepted quote ${quote.quoteNumber}; awaiting payment/queueing.`,
-            changedBy:session.user.email ?? session.user.name ?? "Admin",
+            changedBy,
           }},
         }},
       },

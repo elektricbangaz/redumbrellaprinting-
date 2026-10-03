@@ -21,6 +21,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const staff = await prisma.adminUser.findUnique({ where: { email: session.user.email } });
   if (!staff) return NextResponse.json({ error: "Staff account not found." }, { status: 404 });
+  const staffId = staff.id;
   const now = new Date();
 
   try {
@@ -30,6 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         include: { order: { select: { paymentStatus: true } } },
       });
       if (!job) return { error: "Job not found.", status: 404 as const };
+      const jobId = job.id;
 
       const action = parsed.data.action;
       if (!productionStages.has(job.stage) && action !== "PROGRESS") {
@@ -42,7 +44,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
 
       async function closeStaffSessions() {
-        const active = await tx.productionSession.findMany({ where: { staffId: staff.id, active: true } });
+        const active = await tx.productionSession.findMany({ where: { staffId, active: true } });
         for (const item of active) {
           const minutes = Math.max(1, Math.round((now.getTime() - item.startedAt.getTime()) / 60000));
           await tx.productionSession.update({
@@ -53,7 +55,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
 
       async function closeJobSessions() {
-        const active = await tx.productionSession.findMany({ where: { workOrderId: job.id, active: true } });
+        const active = await tx.productionSession.findMany({ where: { workOrderId: jobId, active: true } });
         for (const item of active) {
           const minutes = Math.max(1, Math.round((now.getTime() - item.startedAt.getTime()) / 60000));
           await tx.productionSession.update({

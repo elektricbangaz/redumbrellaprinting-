@@ -13,6 +13,7 @@ const schema=z.object({
 export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const session=await auth();
   if(!session?.user)return NextResponse.json({error:"Unauthorized"},{status:401});
+  const changedBy=session.user.email??session.user.name??"Admin";
   const parsed=schema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:"Invalid stock adjustment."},{status:400});
   const {id}=await params;
@@ -30,7 +31,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
       await tx.inventoryMovement.create({
         data:{
           inventoryItemId:id,type:parsed.data.type,quantity:parsed.data.delta,note:parsed.data.note||null,
-          changedBy:session.user.email??session.user.name??"Admin",
+          changedBy,
         },
       });
     }

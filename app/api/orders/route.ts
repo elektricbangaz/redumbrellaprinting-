@@ -111,6 +111,9 @@ export async function POST(req: Request) {
       if (calculated.quoteOnly) {
         throw new Error(`Product ${product.name} requires a production quote for this configuration.`);
       }
+      if (calculated.unitPrice === undefined) {
+        throw new Error(`Product ${product.name} returned an invalid designer price.`);
+      }
       unitPrice = calculated.unitPrice;
     }
 
