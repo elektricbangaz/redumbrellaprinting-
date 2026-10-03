@@ -14,6 +14,7 @@ const schema = z.object({
         description: z.string().min(1),
         quantity: z.number().int().min(1),
         unitCost: z.number().int().min(0),
+        inventoryItemId: z.string().nullable().optional(),
       })
     )
     .min(1),

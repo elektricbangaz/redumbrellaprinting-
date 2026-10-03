@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
+import { planWorkOrderMaterials } from "@/lib/production-materials";
 
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await auth();
@@ -10,7 +11,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;
   const quote=await prisma.quote.findUnique({
     where:{id},
-    include:{items:{orderBy:{sortOrder:"asc"}},invoices:{where:{status:{not:"VOID"}},take:1},design:{select:{productId:true}}},
+    include:{items:{orderBy:{sortOrder:"asc"}},invoices:{where:{status:{not:"VOID"}},take:1},design:{select:{productId:true,approvalStatus:true}}},
   });
   if(!quote) return NextResponse.json({error:"Quote not found."},{status:404});
   if(quote.convertedOrderId){
@@ -42,6 +43,8 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const dueDate=quote.validUntil ?? null;
   const existingInvoice=quote.invoices[0];
   const alreadyPaid=Boolean(existingInvoice && existingInvoice.total>0 && existingInvoice.amountPaid>=quote.total);
+  const artworkApproved=!quote.designId || quote.design?.approvalStatus==="APPROVED";
+  const initialStage=artworkApproved ? (alreadyPaid?"QUEUED":"APPROVED") : "NEEDS_CUSTOMER_APPROVAL";
   const order=await prisma.$transaction(async(tx)=>{
     const created=await tx.order.create({
       data:{
@@ -67,14 +70,16 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         }))},
         workOrders:{create:{
           workOrderNumber:generateWorkOrderNumber(),
-          stage:alreadyPaid?"QUEUED":"APPROVED",
+          stage:initialStage,
           dueDate,
           notes:`Approved quote ${quote.quoteNumber}: ${quote.jobType}`,
           events:{create:{
-            toStage:alreadyPaid?"QUEUED":"APPROVED",
-            note:alreadyPaid
-              ? `Created from accepted quote ${quote.quoteNumber}; invoice already paid, released to queue.`
-              : `Created from accepted quote ${quote.quoteNumber}; awaiting payment/queueing.`,
+            toStage:initialStage,
+            note:initialStage==="NEEDS_CUSTOMER_APPROVAL"
+              ? `Created from accepted quote ${quote.quoteNumber}; artwork approval is still required before production.`
+              : initialStage==="QUEUED"
+                ? `Created from accepted quote ${quote.quoteNumber}; artwork approved and invoice already paid, released to queue.`
+                : `Created from accepted quote ${quote.quoteNumber}; artwork approved, awaiting payment.`,
             changedBy,
           }},
         }},
@@ -131,6 +136,10 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
       });
     }
 
+    if(initialStage==="QUEUED"){
+      const jobs=await tx.workOrder.findMany({where:{orderId:created.id},select:{id:true}});
+      for(const job of jobs) await planWorkOrderMaterials(tx,job.id);
+    }
     await tx.quote.update({where:{id},data:{status:"CONVERTED",convertedOrderId:created.id}});
     return created;
   });

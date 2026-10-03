@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInvoiceNumber, generateOrderNumber, generateWorkOrderNumber } from "@/lib/order-numbers";
+import { planWorkOrderMaterials } from "@/lib/production-materials";
 
 const schema=z.object({
   name:z.string().trim().min(2),
@@ -75,6 +76,9 @@ export async function POST(req:Request){
       },
       include:{workOrders:true},
     });
+    if(input.paid){
+      for(const job of order.workOrders) await planWorkOrderMaterials(tx,job.id);
+    }
     const invoice=await tx.invoice.create({
       data:{
         invoiceNumber:generateInvoiceNumber(),

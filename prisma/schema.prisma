@@ -13,51 +13,57 @@ enum AdminRole {
 }
 
 model AdminUser {
-  id                       String    @id @default(cuid())
-  email                    String    @unique
+  id                       String              @id @default(cuid())
+  email                    String              @unique
   name                     String
   passwordHash             String
-  role                     AdminRole @default(STAFF)
+  role                     AdminRole           @default(STAFF)
   jobTitle                 String?
-  hourlyRate               Int       @default(0)
-  passwordResetTokenHash   String?   @unique
+  hourlyRate               Int                 @default(0)
+  active                   Boolean             @default(true)
+  invitedAt                DateTime?
+  passwordResetTokenHash   String?             @unique
   passwordResetExpiresAt   DateTime?
   passwordResetRequestedAt DateTime?
-  createdAt                DateTime  @default(now())
+  createdAt                DateTime            @default(now())
   broadcasts               Broadcast[]
   productionSessions       ProductionSession[]
+  assignedWorkOrders       WorkOrder[]         @relation("AssignedStaff")
+  shifts                   StaffShift[]
+  clockEntries             StaffClockEntry[]
 }
 
 model Product {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  category    String
-  description String?
-  basePrice   Int
-  colors      Json
-  sizes       Json
-  images      Json
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  designs    Design[]
-  orderItems      OrderItem[]
-  templates       DesignTemplate[]
-  inventoryItems  InventoryItem[]
+  id               String            @id @default(cuid())
+  name             String
+  slug             String            @unique
+  category         String
+  description      String?
+  basePrice        Int
+  colors           Json
+  sizes            Json
+  images           Json
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  designs          Design[]
+  orderItems       OrderItem[]
+  templates        DesignTemplate[]
+  inventoryItems   InventoryItem[]
+  inventoryRecipes InventoryRecipe[]
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String?
   phone     String?
   address   String?
-  createdAt DateTime @default(now())
-  orders   Order[]
-  designs  Design[]
-  quotes   Quote[]
-  invoices Invoice[]
+  createdAt DateTime  @default(now())
+  orders    Order[]
+  designs   Design[]
+  quotes    Quote[]
+  invoices  Invoice[]
 }
 
 enum DesignApprovalStatus {
@@ -67,22 +73,29 @@ enum DesignApprovalStatus {
   REJECTED
 }
 
+enum DesignStatus {
+  PENDING
+  COMPLETE
+  CANCELLED
+}
+
 model Design {
-  id           String   @id @default(cuid())
-  productId    String
-  product      Product  @relation(fields: [productId], references: [id])
-  customerId   String?
-  customer     Customer? @relation(fields: [customerId], references: [id])
-  color        String
-  canvasData   Json
+  id             String               @id @default(cuid())
+  productId      String
+  product        Product              @relation(fields: [productId], references: [id])
+  customerId     String?
+  customer       Customer?            @relation(fields: [customerId], references: [id])
+  color          String
+  canvasData     Json
   previewImage   String?
   approvalStatus DesignApprovalStatus @default(PENDING)
+  status         DesignStatus         @default(PENDING)
   approvalNote   String?
   approvedAt     DateTime?
   approvedBy     String?
-  createdAt      DateTime @default(now())
-  orderItems OrderItem[]
-  quotes     Quote[]
+  createdAt      DateTime             @default(now())
+  orderItems     OrderItem[]
+  quotes         Quote[]
 }
 
 enum OrderStatus {
@@ -108,43 +121,43 @@ enum PaymentStatus {
 }
 
 model Order {
-  id               String          @id @default(cuid())
-  orderNumber      String          @unique
-  customerId       String?
-  customer         Customer?       @relation(fields: [customerId], references: [id])
-  customerEmail    String
-  customerName     String
-  customerPhone    String?
-  shippingAddress  String?
-  notes            String?
-  status           OrderStatus     @default(PENDING_PAYMENT)
-  paymentProvider  PaymentProvider?
-  paymentStatus    PaymentStatus   @default(UNPAID)
-  paymentReference String?
-  subtotal         Int
-  total            Int
-  currency         String          @default("JMD")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  items      OrderItem[]
+  id                  String               @id @default(cuid())
+  orderNumber         String               @unique
+  customerId          String?
+  customer            Customer?            @relation(fields: [customerId], references: [id])
+  customerEmail       String
+  customerName        String
+  customerPhone       String?
+  shippingAddress     String?
+  notes               String?
+  status              OrderStatus          @default(PENDING_PAYMENT)
+  paymentProvider     PaymentProvider?
+  paymentStatus       PaymentStatus        @default(UNPAID)
+  paymentReference    String?
+  subtotal            Int
+  total               Int
+  currency            String               @default("JMD")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  items               OrderItem[]
   workOrders          WorkOrder[]
   invoices            Invoice[]
   paymentTransactions PaymentTransaction[]
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  designId   String?
-  design     Design?  @relation(fields: [designId], references: [id])
-  size       String
-  color      String
-  quantity   Int
-  unitPrice  Int
-  lineTotal  Int
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  designId  String?
+  design    Design? @relation(fields: [designId], references: [id])
+  size      String
+  color     String
+  quantity  Int
+  unitPrice Int
+  lineTotal Int
 }
 
 enum WorkOrderStage {
@@ -162,43 +175,95 @@ enum WorkOrderStage {
 }
 
 model WorkOrder {
-  id               String         @id @default(cuid())
-  workOrderNumber  String         @unique
-  orderId          String
-  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  stage            WorkOrderStage @default(SUBMITTED)
-  priority         String         @default("NORMAL")
-  productionMethod String?
-  productionPhase  String         @default("PRE_PRESS")
-  placement        String?
-  assignedTo       String?
-  machine          String?
-  progress         Int            @default(0)
-  lastWorkedBy     String?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  dueDate          DateTime?
-  blockedReason    String?
+  id                String              @id @default(cuid())
+  workOrderNumber   String              @unique
+  orderId           String
+  order             Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage             WorkOrderStage      @default(SUBMITTED)
+  priority          String              @default("NORMAL")
+  productionMethod  String?
+  productionPhase   String              @default("PRE_PRESS")
+  placement         String?
+  assignedTo        String?
+  machine           String?
+  progress          Int                 @default(0)
+  lastWorkedBy      String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  dueDate           DateTime?
+  blockedReason     String?
   fulfillmentMethod String?
   trackingNumber    String?
   handoffAt         DateTime?
   handoffBy         String?
-  notes            String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  events           WorkOrderEvent[]
-  sessions         ProductionSession[]
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  events            WorkOrderEvent[]
+  sessions          ProductionSession[]
+  assignedStaffId   String?
+  assignedStaff     AdminUser?          @relation("AssignedStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  workstationId     String?
+  workstation       Workstation?        @relation(fields: [workstationId], references: [id], onDelete: SetNull)
+  materials         WorkOrderMaterial[]
+
+  @@index([assignedStaffId, stage])
+  @@index([workstationId, stage])
 }
 
 model WorkOrderEvent {
-  id          String         @id @default(cuid())
+  id          String          @id @default(cuid())
   workOrderId String
-  workOrder   WorkOrder      @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  workOrder   WorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   fromStage   WorkOrderStage?
   toStage     WorkOrderStage
   note        String?
   changedBy   String?
-  createdAt   DateTime       @default(now())
+  createdAt   DateTime        @default(now())
+}
+
+model Workstation {
+  id           String            @id @default(cuid())
+  name         String            @unique
+  area         String?
+  active       Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  workOrders   WorkOrder[]
+  shifts       StaffShift[]
+  clockEntries StaffClockEntry[]
+}
+
+model StaffShift {
+  id            String       @id @default(cuid())
+  staffId       String
+  staff         AdminUser    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  workstationId String?
+  workstation   Workstation? @relation(fields: [workstationId], references: [id], onDelete: SetNull)
+  startsAt      DateTime
+  endsAt        DateTime
+  status        String       @default("SCHEDULED")
+  notes         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([staffId, startsAt])
+  @@index([workstationId, startsAt])
+}
+
+model StaffClockEntry {
+  id              String       @id @default(cuid())
+  staffId         String
+  staff           AdminUser    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  workstationId   String?
+  workstation     Workstation? @relation(fields: [workstationId], references: [id], onDelete: SetNull)
+  clockIn         DateTime     @default(now())
+  clockOut        DateTime?
+  durationMinutes Int          @default(0)
+  createdAt       DateTime     @default(now())
+
+  @@index([staffId, clockIn])
+  @@index([clockOut])
 }
 
 model ProductionSession {
@@ -235,17 +300,21 @@ model PurchaseOrder {
   total       Int
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
-  items PurchaseOrderItem[]
+  receivedAt  DateTime?
+  receivedBy  String?
+  items       PurchaseOrderItem[]
 }
 
 model PurchaseOrderItem {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   description     String
   quantity        Int
   unitCost        Int
   lineTotal       Int
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
 }
 
 model Subscriber {
@@ -256,16 +325,15 @@ model Subscriber {
 }
 
 model Broadcast {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   subject     String
   body        String
   sentAt      DateTime?
-  sentCount   Int       @default(0)
+  sentCount   Int        @default(0)
   createdById String?
   createdBy   AdminUser? @relation(fields: [createdById], references: [id])
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
 }
-
 
 enum QuoteStatus {
   REQUESTED
@@ -335,27 +403,27 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique
-  publicToken   String        @unique @default(cuid())
+  id            String               @id @default(cuid())
+  invoiceNumber String               @unique
+  publicToken   String               @unique @default(cuid())
   customerId    String
-  customer      Customer      @relation(fields: [customerId], references: [id])
+  customer      Customer             @relation(fields: [customerId], references: [id])
   quoteId       String?
-  quote         Quote?        @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  quote         Quote?               @relation(fields: [quoteId], references: [id], onDelete: SetNull)
   orderId       String?
-  order         Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  status        InvoiceStatus @default(DRAFT)
-  issueDate     DateTime      @default(now())
+  order         Order?               @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  status        InvoiceStatus        @default(DRAFT)
+  issueDate     DateTime             @default(now())
   dueDate       DateTime?
-  subtotal      Int           @default(0)
-  tax           Int           @default(0)
-  total         Int           @default(0)
-  amountPaid    Int           @default(0)
-  balance       Int           @default(0)
-  currency      String        @default("JMD")
+  subtotal      Int                  @default(0)
+  tax           Int                  @default(0)
+  total         Int                  @default(0)
+  amountPaid    Int                  @default(0)
+  balance       Int                  @default(0)
+  currency      String               @default("JMD")
   notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   items         InvoiceItem[]
   payments      PaymentTransaction[]
 
@@ -374,7 +442,6 @@ model InvoiceItem {
   sortOrder   Int     @default(0)
 }
 
-
 model DesignTemplate {
   id           String   @id @default(cuid())
   name         String
@@ -391,21 +458,59 @@ model DesignTemplate {
 }
 
 model InventoryItem {
-  id           String   @id @default(cuid())
-  sku          String   @unique
-  name         String
-  category     String
-  unit         String   @default("unit")
-  quantity     Float    @default(0)
-  reorderLevel Float    @default(0)
-  productId    String?
-  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  movements    InventoryMovement[]
+  id                 String              @id @default(cuid())
+  sku                String              @unique
+  name               String
+  category           String
+  unit               String              @default("unit")
+  quantity           Float               @default(0)
+  reorderLevel       Float               @default(0)
+  productId          String?
+  product            Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  movements          InventoryMovement[]
+  purchaseOrderItems PurchaseOrderItem[]
+  recipes            InventoryRecipe[]
+  workOrderMaterials WorkOrderMaterial[]
 
   @@index([category, active])
+}
+
+model InventoryRecipe {
+  id               String        @id @default(cuid())
+  productId        String
+  product          Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryItemId  String
+  inventoryItem    InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  productionMethod String?
+  placement        String?
+  quantityPerUnit  Float
+  wastePercent     Float         @default(0)
+  active           Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([productId, active])
+  @@index([inventoryItemId, active])
+}
+
+model WorkOrderMaterial {
+  id              String        @id @default(cuid())
+  workOrderId     String
+  workOrder       WorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  requiredQty     Float
+  reservedQty     Float         @default(0)
+  consumedQty     Float         @default(0)
+  status          String        @default("PLANNED")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([workOrderId, inventoryItemId])
+  @@index([status, workOrderId])
 }
 
 model InventoryMovement {
@@ -428,20 +533,52 @@ model AdminSetting {
 }
 
 model PaymentTransaction {
-  id         String           @id @default(cuid())
-  orderId    String?
-  order      Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  invoiceId  String?
-  invoice    Invoice?         @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  provider   PaymentProvider?
-  reference  String?
-  amount     Int
-  currency   String           @default("JMD")
-  status     PaymentStatus
-  source     String           @default("SYSTEM")
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(cuid())
+  orderId   String?
+  order     Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  invoiceId String?
+  invoice   Invoice?         @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  provider  PaymentProvider?
+  reference String?
+  amount    Int
+  currency  String           @default("JMD")
+  status    PaymentStatus
+  source    String           @default("SYSTEM")
+  createdAt DateTime         @default(now())
 
   @@index([orderId, createdAt])
   @@index([invoiceId, createdAt])
   @@index([status, createdAt])
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
+model Notification {
+  id         String              @id @default(cuid())
+  channel    NotificationChannel
+  event      String
+  recipient  String
+  subject    String?
+  message    String
+  status     NotificationStatus  @default(PENDING)
+  externalId String?
+  error      String?
+  entityType String?
+  entityId   String?
+  createdAt  DateTime            @default(now())
+  sentAt     DateTime?
+
+  @@index([event, createdAt])
+  @@index([status, createdAt])
+  @@index([entityType, entityId])
 }

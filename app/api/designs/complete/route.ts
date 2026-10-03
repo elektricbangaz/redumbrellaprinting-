@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { CORE_CATALOG } from "@/lib/catalog";
 import { uploadDataUrl } from "@/lib/cloudinary-server";
 import { generateQuoteNumber } from "@/lib/order-numbers";
+import { sendCustomerEvent } from "@/lib/notifications";
 
 const schema = z.object({
   productId: z.string(),
@@ -315,6 +316,19 @@ export async function POST(req: Request) {
           },
         },
       });
+    }
+
+    try {
+      await sendCustomerEvent({
+        event: "DESIGN_RECEIVED", entityType: "Design", entityId: record.id,
+        email: customer.email, phone: customer.phone,
+        emailSubject: `Design received — ${input.productName}`,
+        message: `Hi ${customer.name || "there"}, we received your Red Umbrella Printing design for ${input.productName}.${quoteNumber ? ` Your quote reference is ${quoteNumber}.` : ""} We will contact you if artwork, pricing or production review is required.`,
+        whatsappTemplate: process.env.WHATSAPP_TEMPLATE_DESIGN_RECEIVED,
+        whatsappParams: [customer.name || "Customer", input.productName, quoteNumber || `RUP-D-${record.id.slice(-8).toUpperCase()}`],
+      });
+    } catch (notificationError) {
+      console.error("[notification] design received failed", notificationError);
     }
 
     return NextResponse.json({

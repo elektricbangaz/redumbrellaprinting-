@@ -270,6 +270,8 @@ export function DesignerApp({
     quantity,
     size,
     printZoneId: activePrintZone?.id,
+    surfaceIds: populatedSurfaceIds(surfaces),
+    decorationMethod,
     hasFrontDesign: hasDesignOnSide(surfaces, "front"),
     hasBackDesign: hasDesignOnSide(surfaces, "back"),
     supplyMode,

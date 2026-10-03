@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { planWorkOrderMaterials, releaseWorkOrderMaterials } from "@/lib/production-materials";
 
 const stages = [
   "SUBMITTED", "REVIEW", "NEEDS_CUSTOMER_APPROVAL", "APPROVED", "QUEUED",
@@ -26,6 +27,8 @@ const patchSchema = z.object({
   stage: z.enum(stages).optional(),
   priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
   assignedTo: z.string().trim().max(120).nullable().optional(),
+  assignedStaffId: z.string().nullable().optional(),
+  workstationId: z.string().nullable().optional(),
   dueDate: z.string().nullable().optional(),
   productionMethod: z.string().trim().max(120).nullable().optional(),
   placement: z.string().trim().max(160).nullable().optional(),
@@ -51,13 +54,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const result = await prisma.$transaction(async (tx) => {
       const current = await tx.workOrder.findUnique({ where: { id }, include: { order: { select: { paymentStatus: true } } } });
       if (!current) return { error: "Job not found.", status: 404 as const };
-      const nextStage = input.stage ?? current.stage;
+      const requestedStage = input.stage ?? current.stage;
+      const nextStage = requestedStage === "APPROVED" && current.order.paymentStatus === "PAID" ? "QUEUED" : requestedStage;
 
       if (input.stage && input.stage !== current.stage && !transitions[current.stage].includes(input.stage)) {
         return { error: `A job cannot move from ${current.stage.replaceAll("_", " ")} to ${input.stage.replaceAll("_", " ")}.`, status: 409 as const };
       }
-      if (nextStage === "IN_PROGRESS" && current.order.paymentStatus !== "PAID") {
-        return { error: "Record payment before moving this job into production.", status: 409 as const };
+      if (["QUEUED", "IN_PROGRESS", "QUALITY_CHECK", "READY", "COMPLETED"].includes(nextStage) && current.order.paymentStatus !== "PAID") {
+        return { error: "Record payment before releasing this job into the production flow.", status: 409 as const };
       }
       const blockedReason = input.blockedReason === undefined ? current.blockedReason : input.blockedReason || null;
       if (nextStage === "ON_HOLD" && !blockedReason) {
@@ -67,9 +71,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       const workOrder = await tx.workOrder.update({
         where: { id },
         data: {
-          ...(input.stage ? { stage: input.stage } : {}),
+          ...(input.stage ? { stage: nextStage } : {}),
           ...(input.priority ? { priority: input.priority } : {}),
           ...(input.assignedTo !== undefined ? { assignedTo: input.assignedTo || null } : {}),
+          ...(input.assignedStaffId !== undefined ? { assignedStaffId: input.assignedStaffId || null } : {}),
+          ...(input.workstationId !== undefined ? { workstationId: input.workstationId || null } : {}),
           ...(input.dueDate !== undefined ? { dueDate: input.dueDate ? new Date(input.dueDate) : null } : {}),
           ...(input.productionMethod !== undefined ? { productionMethod: input.productionMethod || null } : {}),
           ...(input.placement !== undefined ? { placement: input.placement || null } : {}),
@@ -79,7 +85,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         },
       });
 
-      const detailsChanged = input.priority !== undefined || input.assignedTo !== undefined || input.dueDate !== undefined || input.productionMethod !== undefined || input.placement !== undefined || input.blockedReason !== undefined;
+      if (nextStage === "QUEUED") await planWorkOrderMaterials(tx, id);
+      if (["ON_HOLD", "CANCELLED"].includes(nextStage)) await releaseWorkOrderMaterials(tx, id);
+
+      const detailsChanged = input.priority !== undefined || input.assignedTo !== undefined || input.assignedStaffId !== undefined || input.workstationId !== undefined || input.dueDate !== undefined || input.productionMethod !== undefined || input.placement !== undefined || input.blockedReason !== undefined;
       if (input.stage !== undefined || detailsChanged || input.note) {
         const defaultNote = input.stage && input.stage !== current.stage
           ? `Stage changed from ${current.stage.replaceAll("_", " ")} to ${nextStage.replaceAll("_", " ")}.`

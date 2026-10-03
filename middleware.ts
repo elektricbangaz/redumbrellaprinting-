@@ -7,7 +7,7 @@ const adminRoutes = [
   "/login", "/forgot-password", "/reset-password", "/dashboard", "/customers", "/quotes", "/design-approvals",
   "/inventory", "/invoices", "/payments", "/receivables", "/catalog", "/templates", "/orders",
   "/work-orders", "/jobs", "/job-queue", "/production", "/floor-board", "/pickup-delivery",
-  "/purchase-orders", "/broadcasts", "/staff", "/reports", "/settings",
+  "/purchase-orders", "/broadcasts", "/staff", "/reports", "/notifications", "/pos", "/designs", "/search", "/settings", "/pos", "/designs", "/notifications",
 ];
 const { auth } = NextAuth(authConfig);
 

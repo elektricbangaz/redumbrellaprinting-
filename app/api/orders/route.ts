@@ -104,6 +104,8 @@ export async function POST(req: Request) {
         quantity: item.quantity,
         size: item.size,
         printZoneId: activeSurfaceId,
+        surfaceIds: Object.keys(surfaces),
+        decorationMethod: typeof document.decorationMethod === "string" ? document.decorationMethod : undefined,
         hasFrontDesign: hasDesignOnSide(surfaces, "front"),
         hasBackDesign: hasDesignOnSide(surfaces, "back"),
         supplyMode,

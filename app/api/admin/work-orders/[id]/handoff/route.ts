@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { sendCustomerEvent } from "@/lib/notifications";
 
 const schema=z.object({
   fulfillmentMethod:z.enum(["PICKUP","DELIVERY"]),
@@ -17,6 +18,9 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;
   const job=await prisma.workOrder.findUnique({where:{id},include:{order:true}});
   if(!job)return NextResponse.json({error:"Job not found."},{status:404});
+  if(job.stage==="COMPLETED" && job.handoffAt){
+    return NextResponse.json({ok:true,job,alreadyHandedOff:true});
+  }
   if(job.stage!=="READY" && job.stage!=="COMPLETED"){
     return NextResponse.json({error:"Only ready jobs can be handed off."},{status:409});
   }
@@ -45,6 +49,9 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
         changedBy:actor,
       },
     });
+    const linkedDesigns=await tx.orderItem.findMany({where:{orderId:job.orderId,designId:{not:null}},select:{designId:true}});
+    const designIds=linkedDesigns.map(item=>item.designId).filter((value):value is string=>Boolean(value));
+    if(designIds.length) await tx.design.updateMany({where:{id:{in:designIds}},data:{status:"COMPLETE"}});
     const remaining=await tx.workOrder.count({where:{orderId:job.orderId,stage:{not:"COMPLETED"}}});
     if(remaining===0){
       await tx.order.update({where:{id:job.orderId},data:{status:"COMPLETED"}});
@@ -52,5 +59,12 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
     return saved;
   });
 
+  try{await sendCustomerEvent({
+    event:"ORDER_HANDED_OFF",entityType:"WorkOrder",entityId:updated.id,email:job.order.customerEmail,phone:job.order.customerPhone,
+    emailSubject:`Order ${job.order.orderNumber} completed`,
+    message:`Your Red Umbrella Printing order ${job.order.orderNumber} has been handed off by ${parsed.data.fulfillmentMethod.toLowerCase()}.${parsed.data.trackingNumber?` Tracking: ${parsed.data.trackingNumber}`:""}`,
+    whatsappTemplate:process.env.WHATSAPP_TEMPLATE_ORDER_COMPLETE,
+    whatsappParams:[job.order.customerName,job.order.orderNumber],
+  });}catch(error){console.error("[notification] handoff update failed",error);}
   return NextResponse.json({ok:true,job:updated});
 }

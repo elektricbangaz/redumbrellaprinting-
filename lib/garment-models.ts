@@ -3,7 +3,10 @@ export type PrintZoneId =
   | "left-chest"
   | "right-chest"
   | "full-back"
-  | "upper-back";
+  | "upper-back"
+  | "left-sleeve"
+  | "right-sleeve"
+  | "hem-tail";
 
 export type PrintZoneConfig = {
   id: PrintZoneId;
@@ -61,6 +64,39 @@ const TEE_ZONES: PrintZoneConfig[] = [
     height: 18,
     projectionScale: [0.16, 0.16],
     projectionOffset: [-0.18, 0.18],
+  },
+  {
+    id: "left-sleeve",
+    label: "Left Sleeve",
+    side: "front",
+    x: 76,
+    y: 31,
+    width: 16,
+    height: 24,
+    projectionScale: [0.13, 0.2],
+    projectionOffset: [0.39, 0.05],
+  },
+  {
+    id: "right-sleeve",
+    label: "Right Sleeve",
+    side: "front",
+    x: 8,
+    y: 31,
+    width: 16,
+    height: 24,
+    projectionScale: [0.13, 0.2],
+    projectionOffset: [-0.39, 0.05],
+  },
+  {
+    id: "hem-tail",
+    label: "Hem / Tail",
+    side: "front",
+    x: 34,
+    y: 72,
+    width: 32,
+    height: 12,
+    projectionScale: [0.30, 0.11],
+    projectionOffset: [0, -0.40],
   },
   {
     id: "full-back",

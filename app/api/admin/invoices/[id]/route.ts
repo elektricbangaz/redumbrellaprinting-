@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { planWorkOrderMaterials } from "@/lib/production-materials";
+import { sendCustomerEvent } from "@/lib/notifications";
 
 const schema=z.object({
   status:z.enum(["DRAFT","SENT","PARTIAL","PAID","OVERDUE","VOID"]).optional(),
@@ -72,6 +74,7 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
         for(const job of jobs){
           if(job.stage==="APPROVED"){
             await tx.workOrder.update({where:{id:job.id},data:{stage:"QUEUED"}});
+            await planWorkOrderMaterials(tx,job.id);
             await tx.workOrderEvent.create({
               data:{
                 workOrderId:job.id,fromStage:"APPROVED",toStage:"QUEUED",
@@ -93,5 +96,17 @@ export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){
     }
     return updated;
   });
+  if(status==="PAID" && existing.status!=="PAID") {
+    const customer=await prisma.customer.findUnique({where:{id:invoice.customerId}});
+    if(customer){
+      try{await sendCustomerEvent({
+        event:"PAYMENT_RECEIVED",entityType:"Invoice",entityId:invoice.id,email:customer.email,phone:customer.phone,
+        emailSubject:`Payment received — ${invoice.invoiceNumber}`,
+        message:`Thank you. Payment has been recorded for Red Umbrella Printing invoice ${invoice.invoiceNumber}. Your production job will proceed as soon as artwork and materials are ready.`,
+        whatsappTemplate:process.env.WHATSAPP_TEMPLATE_PAYMENT_RECEIVED,
+        whatsappParams:[customer.name||"Customer",invoice.invoiceNumber],
+      });}catch(error){console.error("[notification] payment receipt failed",error);}
+    }
+  }
   return NextResponse.json({ok:true,invoice});
 }
